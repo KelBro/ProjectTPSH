@@ -1,9 +1,10 @@
 import logging
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters.command import Command
+from config_reader import config
 
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token="7790284290:AAGLURG-Yno1sEE77xdD2xFL5ank_FrUIW8")
+bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher()
 
 
