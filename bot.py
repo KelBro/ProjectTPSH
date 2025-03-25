@@ -11,3 +11,9 @@ dp = Dispatcher()
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     await message.answer("Hello!")
+    kb = [
+        [types.KeyboardButton(text="С пюрешкой")],
+        [types.KeyboardButton(text="Без пюрешки")]
+    ]
+    keyboard = types.ReplyKeyboardMarkup(keyboard=kb)
+    await message.answer("Как подавать котлеты?", reply_markup=keyboard)
