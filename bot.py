@@ -1,5 +1,7 @@
 import json
 import logging
+import sqlite3
+from datetime import datetime
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.utils.markdown import hbold, hitalic
 from aiogram.filters.command import Command
@@ -7,11 +9,32 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from config_reader import config
-import asyncio
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())
+upload_id = -1
+st_num = 1
+
+# Инициализация базы данных
+def init_db():
+    connection = sqlite3.connect('data_base.db')
+    cursor = connection.cursor()
+
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS uploads (
+        user_id INTEGER,
+        upload_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        description TEXT,
+        upload_date TEXT
+    )
+    ''')
+
+    connection.commit()
+    connection.close()
+
+init_db()
 
 TRANSLATIONS = json.load(open("languages.json", encoding="utf-8"))
 def get_translations(lang):
@@ -56,6 +79,17 @@ async def handle_upload(message: types.Message, state: FSMContext):
 # обработчик получения фотографии
 @dp.message(F.photo, DressStates.waiting_for_photo)
 async def handle_photo(message: types.Message, state: FSMContext):
+    date = datetime.now().strftime("%d.%m.%Y")
+    name = 'Тест платье ' + date
+    description = "ПОКА ЧТО НИЧЕГО"
+    connection = sqlite3.connect('data_base.db')
+    cursor = connection.cursor()
+    cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)', (message.from_user.id, name, description, date))
+    global upload_id
+    upload_id = cursor.lastrowid
+    connection.commit()
+    connection.close()
+
     buttons = [
         [
             types.InlineKeyboardButton(text=tr['yes'], callback_data="ph_yes"),
@@ -92,22 +126,49 @@ async def process_dress_name(message: types.Message, state: FSMContext):
     await message.answer(tr['rename_success']+new_name)
     await state.clear()
 
+    connection = sqlite3.connect('data_base.db')
+    cursor = connection.cursor()
+    cursor.execute('UPDATE uploads SET name = ? WHERE upload_id = ?', (new_name, upload_id))
+    connection.commit()
+    connection.close()
+
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
+    connection = sqlite3.connect("data_base.db")
+    cursor = connection.cursor()
+    cursor.execute("""
+            SELECT * 
+            FROM uploads 
+            WHERE user_id = ?
+        """, (message.from_user.id,))
+    lines = cursor.fetchall()
+    x = (st_num-1)*5
+    y = x + 5
+    row = lines[x:y]
     buttons = [
-        [types.InlineKeyboardButton(text=tr['items'][0], callback_data="num_finish")],
-        [types.InlineKeyboardButton(text=tr['items'][1], callback_data="num_finish")],
-        [types.InlineKeyboardButton(text=tr['items'][2], callback_data="num_finish")],
-        [types.InlineKeyboardButton(text=tr['items'][3], callback_data="num_finish")],
-        [types.InlineKeyboardButton(text=tr['items'][4], callback_data="num_finish")],
+        [types.InlineKeyboardButton(text=row[0][2], callback_data="his_this")],
+        [types.InlineKeyboardButton(text=row[1][2], callback_data="his_this")],
+        [types.InlineKeyboardButton(text=row[2][2], callback_data="his_this")],
+        [types.InlineKeyboardButton(text=row[3][2], callback_data="his_this")],
+        [types.InlineKeyboardButton(text=row[4][2], callback_data="his_this")],
         [
-            types.InlineKeyboardButton(text="◀", callback_data="num_decr"),
-            types.InlineKeyboardButton(text="▶", callback_data="num_incr")
+            types.InlineKeyboardButton(text="◀", callback_data="his_prev"),
+            types.InlineKeyboardButton(text="▶", callback_data="his_next")
         ]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.answer(tr['call_history'], reply_markup=keyboard)
+
+@dp.callback_query(F.data.startswith("ph_"))
+async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext):
+    action = callback.data.split("_")[1]
+    if action == "yes":
+        await callback.message.answer(tr['rename_prompt'])
+        await state.set_state(DressStates.waiting_for_name)
+    elif action == "no":
+        await callback.message.edit_text(tr['rename_cancel'])
+    await callback.answer()
 
 # обработчик кнопки "Язык"
 @dp.message(lambda message: message.text in [lang['language'] for lang in TRANSLATIONS.values()])

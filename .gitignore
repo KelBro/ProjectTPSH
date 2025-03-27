@@ -1,0 +1,15 @@
+.env
+.env.*
+
+.idea/
+*.iml
+*.ipr
+*.iws
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+ENV/
