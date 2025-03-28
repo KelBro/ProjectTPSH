@@ -10,7 +10,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from config_reader import config
 import math
-import asyncio
 
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
@@ -19,10 +18,6 @@ upload_id = -1
 user_id = 1
 st_num = 1
 
-# async def delete_webhook():
-#     await bot.delete_webhook()
-#
-# asyncio.run(delete_webhook())
 
 # Инициализация базы данных
 def init_db():
@@ -42,26 +37,34 @@ def init_db():
     connection.commit()
     connection.close()
 
+
 init_db()
 
 TRANSLATIONS = json.load(open("languages.json", encoding="utf-8"))
+
+
 def get_translations(lang):
     return TRANSLATIONS[lang]
+
+
 tr = get_translations("ru")
+
 
 class DressStates(StatesGroup):
     waiting_for_name = State()
+
 
 # пересоздание клавиатуры
 def get_keyboard(tr):
     kb = [
         [types.KeyboardButton(text=tr['history']),
-        types.KeyboardButton(text=tr['language'])]
+         types.KeyboardButton(text=tr['language'])]
     ]
     return types.ReplyKeyboardMarkup(
         keyboard=kb,
         resize_keyboard=True
     )
+
 
 # обработчик команды /start
 @dp.message(Command("start"))
@@ -87,7 +90,8 @@ async def handle_photo(message: types.Message):
     description = "ПОКА ЧТО НИЧЕГО"
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)', (user_id, name, description, date))
+    cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
+                   (user_id, name, description, date))
     global upload_id
     upload_id = cursor.lastrowid
     connection.commit()
@@ -114,15 +118,16 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
         await callback.message.answer(tr['rename_prompt'])
         await state.set_state(DressStates.waiting_for_name)
     elif action == "no":
-        await callback.message.edit_text(tr['rename_cancel'])
+        await callback.message.edit_text(tr['rename_cancel'], reply_markup=None)
     await callback.answer()
+
 
 # изменение названия платья
 @dp.message(DressStates.waiting_for_name)
 async def process_dress_name(message: types.Message, state: FSMContext):
     new_name = message.text
     if new_name != tr["language"]:
-        await message.answer(tr['rename_success']+new_name)
+        await message.answer(tr['rename_success'] + new_name)
         await state.clear()
 
         connection = sqlite3.connect('data_base.db')
@@ -131,80 +136,88 @@ async def process_dress_name(message: types.Message, state: FSMContext):
         connection.commit()
         connection.close()
 
-def lol(message: types.Message):
+
+def get_history_keyboard():
     connection = sqlite3.connect("data_base.db")
     cursor = connection.cursor()
     cursor.execute("""
-                SELECT * 
-                FROM uploads 
-                WHERE user_id = ?
-            """, (user_id,))
+        SELECT * 
+        FROM uploads 
+        WHERE user_id = ?
+    """, (user_id,))
     lines = cursor.fetchall()
-    x = (st_num - 1) * 5
-    y = max(0, min(x+5, len(lines)))
-    row = lines[x:y]
-    a,b = len(row), len(lines)
-    p,n = "prev", "next"
-    if st_num == 1:
-        p = "lol"
-    elif st_num == (b//5 if b%5 == 0 else b//5+1):
-        n = "lol"
-    if a < 5:
-        for i in range(5-a):
-            row.append(["his", "lol", tr['empty']])
-    print(row)
-    buttons = [
-        [types.InlineKeyboardButton(text=row[0][2], callback_data=f"his_{row[0][1]}")],
-        [types.InlineKeyboardButton(text=row[1][2], callback_data=f"his_{row[1][1]}")],
-        [types.InlineKeyboardButton(text=row[2][2], callback_data=f"his_{row[2][1]}")],
-        [types.InlineKeyboardButton(text=row[3][2], callback_data=f"his_{row[3][1]}")],
-        [types.InlineKeyboardButton(text=row[4][2], callback_data=f"his_{row[4][1]}")],
-        [
-            types.InlineKeyboardButton(text="◀", callback_data=f"his_{p}_{len(lines)}"),
-            types.InlineKeyboardButton(text="▶", callback_data=f"his_{n}_{len(lines)}")
-        ]
-    ]
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
-    print(buttons)
-    return keyboard
+    connection.close()
+
+    total_items = len(lines)
+    items_per_page = 5
+    max_page = math.ceil(total_items / items_per_page)
+    start_idx = (st_num - 1) * items_per_page
+    end_idx = min(start_idx + items_per_page, total_items)
+    current_items = lines[start_idx:end_idx]
+
+    buttons = []
+    # Добавляем кнопки для текущих элементов
+    for item in current_items:
+        buttons.append([types.InlineKeyboardButton(text=item[2], callback_data=f"his_{item[1]}")])
+
+    # Добавляем заглушки для оставшихся мест
+    for _ in range(items_per_page - len(current_items)):
+        buttons.append([types.InlineKeyboardButton(text=tr['empty'], callback_data="his_empty")])
+
+    # Кнопки навигации
+    nav_buttons = []
+    if st_num > 1:
+        nav_buttons.append(types.InlineKeyboardButton(text="◀", callback_data="his_prev"))
+    if st_num < max_page and total_items > 0:
+        nav_buttons.append(types.InlineKeyboardButton(text="▶", callback_data="his_next"))
+    if nav_buttons:
+        buttons.append(nav_buttons)
+
+    return types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
     global st_num
     st_num = 1
-    k = lol(message)
-    await message.answer(tr['call_history'], reply_markup=k)
+    keyboard = get_history_keyboard()
+    await message.answer(tr['call_history'], reply_markup=keyboard)
+
 
 @dp.callback_query(F.data.startswith("his_"))
 async def history_menu(callback: types.CallbackQuery):
     global st_num
     data = callback.data.split("_")
-    d = int(data[2])
-    if data[1] == "prev":
-        if st_num > 1:
-            st_num -= 1
-            k = lol(callback.message)
-            await callback.message.edit_text(tr['call_history'], reply_markup=k)
-            await callback.answer()
-    elif data[1] == "next":
-        if st_num < (d//5 if d % 5 == 0 else d//5+1):
-            st_num += 1
-            k = lol(callback.message)
-            await callback.message.edit_text(tr['call_history'], reply_markup=k)
-            await callback.answer()
-    elif data[1] != "lol":
+    action = data[1]
+
+    if action == "prev":
+        st_num -= 1
+        keyboard = get_history_keyboard()
+        await callback.message.edit_reply_markup(reply_markup=keyboard)
+        await callback.answer()
+    elif action == "next":
+        st_num += 1
+        keyboard = get_history_keyboard()
+        await callback.message.edit_reply_markup(reply_markup=keyboard)
+        await callback.answer()
+    elif action == "empty":
+        await callback.answer()
+    else:
+        # Показ деталей элемента
+        upload_id = int(action)
         connection = sqlite3.connect("data_base.db")
         cursor = connection.cursor()
-        cursor.execute("SELECT * FROM uploads WHERE rowid = ?", (data[1]))
-        line = cursor.fetchall()[0]
-        print(line)
-        await callback.message.answer(
-            f"{hbold(str(line[2]))}"
-            f"\n\n{line[3]}"
-            f"\n{line[4]}",
-            parse_mode="HTML"
-        )
+        cursor.execute("SELECT * FROM uploads WHERE upload_id = ?", (upload_id,))
+        item = cursor.fetchone()
+        connection.close()
+
+        if item:
+            await callback.message.answer(
+                f"{hbold(item[2])}\n\n{item[3]}\n{item[4]}",
+                parse_mode="HTML"
+            )
+        await callback.answer()
 
 
 # обработчик кнопки "Язык"
@@ -216,6 +229,7 @@ async def handle_language(message: types.Message):
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     await message.answer(tr['select'], reply_markup=keyboard)
+
 
 # обработчик инлайн-кнопок языка
 @dp.callback_query(F.data.startswith("lan_"))
@@ -230,7 +244,9 @@ async def handle_language_callback(callback: types.CallbackQuery):
     )
     await callback.answer()
 
+
 # обработчик команды /help
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
+
