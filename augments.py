@@ -1,115 +1,164 @@
-import pyarrow.parquet as pq
+# import pandas as pd
+# import io
+# import numpy as np
+# from PIL import Image
+# import albumentations as A
+# from tqdm import tqdm
+#
+# df = pd.read_parquet('datasets/dataset1.parquet')
+# print("Original DataFrame shape:", df.shape)
+#
+# albumentations_transform = A.Compose([
+#     A.RandomScale(scale_limit=0.1, p=0.3),
+#     A.Rotate(limit=(-15, 15)),
+#     A.HorizontalFlip(p=0.5),
+#     A.VerticalFlip(p=0.1),
+#     A.GridDistortion(distort_limit=0.05, p=0.1),
+#     A.PadIfNeeded(min_height=256, min_width=256, p=1.0),
+#     ], bbox_params=A.BboxParams(format='pascal_voc', min_area=1024, min_visibility=0.1) if 'bbox' in df.columns else None)
+#
+#
+# def augment_and_convert(image_data):
+#     img_bytes = image_data['bytes'] if isinstance(image_data, dict) else image_data
+#
+#     img = Image.open(io.BytesIO(img_bytes))
+#     img_np = np.array(img)
+#
+#     if len(img_np.shape) == 2:
+#         img_np = np.expand_dims(img_np, axis=-1)
+#
+#     try:
+#         if 'bbox' in image_data:
+#             augmented = albumentations_transform(
+#                 image=img_np,
+#                 bboxes=[image_data['bbox']],
+#                 class_labels=['dress'] if 'class' not in image_data else [image_data['class']]
+#             )
+#             augmented_img_np = augmented['image']
+#             augmented_bbox = augmented['bboxes'][0] if augmented['bboxes'] else image_data['bbox']
+#         else:
+#             augmented = albumentations_transform(image=img_np)
+#             augmented_img_np = augmented['image']
+#     except Exception as e:
+#         print(f"Error augmenting image: {e}")
+#         augmented_img_np = img_np
+#
+#     augmented_img = Image.fromarray(augmented_img_np)
+#     img_byte_arr = io.BytesIO()
+#     augmented_img.save(img_byte_arr, format='PNG')
+#
+#     if isinstance(image_data, dict):
+#         result = {
+#             'bytes': img_byte_arr.getvalue(),
+#             **{k: v for k, v in image_data.items() if k != 'bytes'}
+#         }
+#         if 'bbox' in image_data:
+#             result['bbox'] = augmented_bbox
+#         return result
+#     else:
+#         return img_byte_arr.getvalue()
+#
+#
+# augmented_data = []
+# for idx, row in tqdm(df.iterrows(), total=len(df)):
+#     try:
+#         augmented_row = row.copy()
+#         augmented_row['image'] = augment_and_convert(row['image'])
+#         augmented_data.append(augmented_row)
+#     except Exception as e:
+#         print(f"Error processing row {idx}: {e}")
+#         augmented_data.append(row)
+#
+# augmented_df = pd.DataFrame(augmented_data)
+#
+# augmented_df.to_parquet('datasets/dataset1_augmented_safe.parquet', index=False)
+# print("Augmented DataFrame saved to datasets/dataset1_augmented_safe.parquet")
+# print("New DataFrame shape:", augmented_df.shape)
+
+
 import pandas as pd
 import io
 import numpy as np
 from PIL import Image
 import albumentations as A
-from nlpaug.augmenter.word import SynonymAug
-import pyarrow as pa
-import os
-import random
+from tqdm import tqdm
 
-# Конфигурация
-INPUT_PARQUET = './Datasets/dataset1.parquet'
-OUTPUT_PARQUET = 'augmented_data.parquet'
-NUM_AUGMENTATIONS = 3  # Количество аугментированных вариантов для каждого оригинала
-IMAGE_SIZE = (224, 224)  # Размер для ресайза изображений
+df = pd.read_parquet('datasets/dataset1.parquet')
+print("Original DataFrame shape:", df.shape)
 
-# Определим аугментации для изображений
-image_augmenter = A.Compose([
+# Основные аугментации
+albumentations_transform1 = A.Compose([
+    A.RandomScale(scale_limit=(0.2, 0.6), p=0.3),
+    A.Rotate(limit=(5, 15)),
     A.HorizontalFlip(p=0.5),
-    A.Rotate(limit=30, p=0.5),
-    A.RandomBrightnessContrast(p=0.3),
-    A.GaussianBlur(blur_limit=(3, 7), p=0.2),
-    A.Resize(*IMAGE_SIZE)
-])
+    A.GridDistortion(distort_limit=0.05, p=0.1),
+    A.PadIfNeeded(min_height=256, min_width=256, p=1.0),
+], bbox_params=A.BboxParams(format='pascal_voc', min_area=1024, min_visibility=0.1) if 'bbox' in df.columns else None)
 
-# Определим аугментации для текста
-text_augmenter = SynonymAug(aug_src='wordnet')
+def augment_and_convert(image_data, transform):
+    img_bytes = image_data['bytes'] if isinstance(image_data, dict) else image_data
 
+    img = Image.open(io.BytesIO(img_bytes))
+    img_np = np.array(img)
 
-def process_dataset():
-    # Чтение исходных данных
-    df = pq.read_table(INPUT_PARQUET).to_pandas()
+    if len(img_np.shape) == 2:
+        img_np = np.expand_dims(img_np, axis=-1)
 
-    augmented_data = []
+    try:
+        if 'bbox' in image_data:
+            augmented = transform(
+                image=img_np,
+                bboxes=[image_data['bbox']],
+                class_labels=['dress'] if 'class' not in image_data else [image_data['class']]
+            )
+            augmented_img_np = augmented['image']
+            augmented_bbox = augmented['bboxes'][0] if augmented['bboxes'] else image_data['bbox']
+        else:
+            augmented = transform(image=img_np)
+            augmented_img_np = augmented['image']
+    except Exception as e:
+        print(f"Error augmenting image: {e}")
+        augmented_img_np = img_np
 
-    for idx, row in df.iterrows():
-        # Обработка изображений
-        img_data = row['image']
-        original_bytes = img_data['bytes']
+    augmented_img = Image.fromarray(augmented_img_np)
+    img_byte_arr = io.BytesIO()
+    augmented_img.save(img_byte_arr, format='PNG')
 
-        try:
-            image = Image.open(io.BytesIO(original_bytes)).convert('RGB')
-            np_image = np.array(image)
-        except Exception as e:
-            print(f"Error loading image {idx}: {str(e)}")
-            continue
+    if isinstance(image_data, dict):
+        result = {
+            'bytes': img_byte_arr.getvalue(),
+            **{k: v for k, v in image_data.items() if k != 'bytes'}
+        }
+        if 'bbox' in image_data:
+            result['bbox'] = augmented_bbox
+        return result
+    else:
+        return img_byte_arr.getvalue()
 
-        # Обработка текста
-        original_text = row['text']
+augmented_data1 = []
+for idx, row in tqdm(df.iterrows(), total=len(df), desc="First augmentation"):
+    try:
+        augmented_row = row.copy()
+        augmented_row['image'] = augment_and_convert(row['image'], albumentations_transform1)
+        augmented_data1.append(augmented_row)
+    except Exception as e:
+        print(f"Error processing row {idx}: {e}")
+        augmented_data1.append(row)
 
-        # Генерируем аугментированные варианты
-        for aug_idx in range(NUM_AUGMENTATIONS):
-            try:
-                # Аугментация изображения
-                augmented_image = image_augmenter(image=np_image)['image']
-                pil_image = Image.fromarray(augmented_image)
+# augmented_data2 = []
+# for idx, row in tqdm(df.iterrows(), total=len(df), desc="Perspective augmentation"):
+#     try:
+#         augmented_row = row.copy()
+#         augmented_row['image'] = augment_and_convert(row['image'], albumentations_transform2)
+#         augmented_data2.append(augmented_row)
+#     except Exception as e:
+#         print(f"Error processing row {idx}: {e}")
+#         augmented_data2.append(row)
 
-                # Сохраняем изображение в bytes
-                img_byte_arr = io.BytesIO()
-                pil_image.save(img_byte_arr, format='JPEG')
-                img_bytes = img_byte_arr.getvalue()
+final_augmented_data = augmented_data1
+augmented_df = pd.DataFrame(final_augmented_data)
 
-                # Аугментация текста
-                augmented_text = text_augmenter.augment(original_text)
-
-                # Сохраняем метаданные
-                augmented_data.append({
-                    'original_id': idx,
-                    'augmentation_id': aug_idx,
-                    'image': {
-                        'bytes': img_bytes,
-                        'Color': img_data.get('Color'),
-                        'Department': img_data.get('Department')
-                    },
-                    'text': augmented_text,
-                    'image_size': f"{IMAGE_SIZE[0]}x{IMAGE_SIZE[1]}"
-                })
-
-            except Exception as e:
-                print(f"Error in augmentation {aug_idx} for sample {idx}: {str(e)}")
-
-        # Сохраняем оригинал с пометкой
-        augmented_data.append({
-            'original_id': idx,
-            'augmentation_id': -1,  # -1 означает оригинал
-            'image': img_data,
-            'text': original_text,
-            'image_size': 'original'
-        })
-
-    # Создаем DataFrame и сохраняем в Parquet
-    augmented_df = pd.DataFrame(augmented_data)
-
-    # Определяем схему для PyArrow
-    schema = pa.schema([
-        ('original_id', pa.int32()),
-        ('augmentation_id', pa.int8()),
-        ('image', pa.struct([
-            ('bytes', pa.binary()),
-            ('Color', pa.string()),
-            ('Department', pa.string())
-        ])),
-        ('text', pa.string()),
-        ('image_size', pa.string())
-    ])
-
-    table = pa.Table.from_pandas(augmented_df, schema=schema)
-    pq.write_table(table, OUTPUT_PARQUET, compression='SNAPPY')
-
-    print(f"Аугментация завершена. Сохранено {len(augmented_df)} записей в {OUTPUT_PARQUET}")
-
-
-if __name__ == "__main__":
-    process_dataset()
+augmented_df.to_parquet('datasets/dataset1_augmented_perspective.parquet', index=False)
+print("\nAugmented DataFrame saved to datasets/dataset1_augmented_perspective.parquet")
+print("Original DataFrame shape:", df.shape)
+print("New DataFrame shape:", augmented_df.shape)
