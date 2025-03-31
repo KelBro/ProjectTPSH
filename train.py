@@ -106,14 +106,15 @@ class Train:
 
     def augmentTheDataset(self,df:list):
         its = 0
+        ndf = df
         for i in df:
             listImg = self.augementation(image_path=i[1])
             for e in listImg:
                 its+=1
                 e.save(f'./Nimage/Aug{its}.png')
-                df.append([its+len(df),f'./Nimage/Aug{its}.png', i[2]])
-        df = pd.DataFrame(df,columns = ['path', 'text'])
-        df.to_csv('datasNew.csv')
+                ndf.append([its+len(df),f'./Nimage/Aug{its}.png', i[2]])
+        ndf = pd.DataFrame(ndf,columns = ['path', 'text'])
+        ndf.to_csv('datasNew.csv')
 
     def augementation(self, image_path:str):
         """ agumentaing the dataset  """
