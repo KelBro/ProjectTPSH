@@ -81,6 +81,14 @@ async def cmd_start(message: types.Message):
         parse_mode="HTML"
     )
 
+def vb_url(filters):
+    url = "https://www.wildberries.ru/catalog/0/search.aspx?search=платье"
+
+    # Кодируем параметры фильтров для URL
+    for i in filters:
+        url += "%20" + i
+
+    return url
 
 # обработчик получения фотографии
 @dp.message(F.photo)
@@ -104,9 +112,12 @@ async def handle_photo(message: types.Message):
         ]
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    filters = ["красное", "длинное", "пышное"]
+    v = f'<a href="{vb_url(filters)}">{tr["link"]}</a>'
     await message.answer(
-        f"{tr['photo_received']}",
-        reply_markup=keyboard
+        f"{tr['photo_received1']}{v}{tr['photo_received2']}",
+        reply_markup=keyboard,
+        parse_mode="HTML"
     )
 
 
@@ -121,12 +132,12 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
         await callback.message.edit_text(tr['rename_cancel'], reply_markup=None)
     await callback.answer()
 
-
+# вб озон ламода алик яндекс маркет
 # изменение названия платья
 @dp.message(DressStates.waiting_for_name)
 async def process_dress_name(message: types.Message, state: FSMContext):
     new_name = message.text
-    if new_name != tr["language"]:
+    if new_name != tr["language"] and new_name != tr["history"]:
         await message.answer(tr['rename_success'] + new_name)
         await state.clear()
 
