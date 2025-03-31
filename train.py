@@ -16,32 +16,34 @@ from albumentations import (
 )
 import numpy as np
 
+
+
 class Train:
     def __init__(self):
 
         self.lls = 3
         self.pathToYaml = 'dataset'
         # connect the dataset fro the parquet
-        # df = self.readTheParquet()
+        df = self.readTheParquet()
         # self.startTrain()
-
+        print('read')
         self.numList = ['a dress with color', 'department', 'detail', 'fabric-elasticity', 'fit', 'hemline', 'material', 'neckline', 'pattern', 'sleeve-length', 'style', 'type', 'waistline']
-        
-        
+
+
         #  get the converted dataset from the file.csv
         # self.saveDataset(df=self.DF)
-        
+
         OBBdf = pd.read_csv('datas.csv')
         print('iis')
         print(len(OBBdf.values.tolist()))
         # self.augmentTheDataset(OBBdf.values.tolist())
-        # self.yoloCoving(df=OBBdf.values.tolist())
-        
+        self.yoloCoving(df=OBBdf.values.tolist())
+
         # df1 = df[:int(len(df)*0.7)]
         # dfM = df[int(len(df)*0.7):]
         # df2 = dfM[:int(len(dfM)*0.5)]
         # df3 = dfM[int(len(dfM)*0.5):]
-        
+
         # self.useModel(modelPath='',imgPath='')
 
 
@@ -64,7 +66,7 @@ class Train:
         ir2 = int((len(df)-ir1)*0.5)
 
         df1 = df[:ir1]
-        df2 = df[ir1:] 
+        df2 = df[ir1:]
         df2 = df2[:ir2]
         df3 = df[ir1+ir2:]
         path1 = './dataset/train/'
@@ -77,7 +79,7 @@ class Train:
                 os.makedirs(path1+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
                 shutil.copy(i[1], path1+eval(i[2])[self.numList[self.lls]]+'/')
             except: ''
-            
+        print('train ready')
         for i in df2:
             try:
                 os.makedirs(path2+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
@@ -85,34 +87,51 @@ class Train:
             try:
                 shutil.copy(i[1], path2+eval(i[2])[self.numList[self.lls]]+'/')
             except: ''
+        print('test ready')
         for i in df3:
-    
+
             try:
                 os.makedirs(path3+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
             except:''
-            try:   
+            try:
                 shutil.copy(i[1], path3+eval(i[2])[self.numList[self.lls]]+'/')
             except: ''
-
+        print('val ready')
         self.createYAML()
         # for i in df:
         #     try:
         #        print(i[1], eval(i[2])[self.numList[0]])
-        #     except Exception as e: 
+        #     except Exception as e:
         #         print(f'error is {e}')
         #         il+=1
         # print(il)
-    
+
 
     def augmentTheDataset(self,df:list):
         its = 0
-        ndf = df
+        for i in range(len(df)):
+            df[i]=df[i][1:]
+        ndf = df.copy()
+        print(ndf[1])
+        ef =999
+        Pol =0
         for i in df:
-            listImg = self.augementation(image_path=i[1])
+            listImg = self.augementation(image_path=i[0])
             for e in listImg:
+                ef +=1
+                Pol+=1
+                if ef ==1000:
+                    ef=0
+                    print(Pol)
                 its+=1
                 e.save(f'./Nimage/Aug{its}.png')
-                ndf.append([its+len(df),f'./Nimage/Aug{its}.png', i[2]])
+                ndf.append([f'./Nimage/Aug{its}.png', i[1]])
+                if Pol==10700:
+                    ndf = pd.DataFrame(ndf,columns = ['path', 'text'])
+                    ndf.to_csv('datasNew.csv')
+                    print('er')
+                    return ''
+        print('tr')
         ndf = pd.DataFrame(ndf,columns = ['path', 'text'])
         ndf.to_csv('datasNew.csv')
 
@@ -121,19 +140,19 @@ class Train:
         # Загрузка изображения
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
+
         # Определение уникальных аугментаций
         augmentations = [
             Compose([Rotate(limit=25, p=1)]),                     # Поворот
             Compose([HorizontalFlip(p=1)]),                        # Горизонтальное отражение
             Compose([RandomBrightnessContrast(p=1, brightness_limit=0.3)]),  # Яркость/контраст
         ]
-        
+
         augmented_images = []
         for aug in augmentations:
             transformed = aug(image=image)['image']
             augmented_images.append(Image.fromarray(transformed))
-        
+
         return augmented_images
 
         # # Пример использования
@@ -156,7 +175,7 @@ class Train:
         for i in df:
             cef = {}
             for f in f'{i[1]}\n'.split(','):
-                pr = f.split(':') 
+                pr = f.split(':')
                 cef[pr[0].strip().lower()] = pr[1].strip().lower()
             i[1] = cef
         # print(str(df[0][1]), len(df), len(df[0][1]))
@@ -166,7 +185,7 @@ class Train:
         random.shuffle(df)
 
         return df
-    
+
     def convert(self, df:list, type:str, num:str): # part of dataframe and the type for exmp: train
         """ convert dataframe to dataframe for YOLO V8"""
         for i in range(len(df)):
@@ -202,12 +221,12 @@ class Train:
             try:
                 if i[1][num] not in cl:
                     cl.append(i[1][num])
-            except: 
+            except:
                 count+=1
-                
+
         # if count!=0: print(count)
         return cl
-    
+
     def createYAML(self):
         """ ADD the yaml file to dataset for yolo """
         ls = self.getClasses(self.DF, self.numList[self.lls])
@@ -223,11 +242,11 @@ nc: {len(ls)}
 # class names
 names: {str(ls)}
         """)
-    
 
-        
 
-        
+
+
+
 
     def train(self, data, model, epoch:int, ilr = 1e-4):
         """ train the model """
@@ -240,13 +259,13 @@ names: {str(ls)}
         for name, module in model.model.named_modules():
             if isinstance(module, torch.nn.Module):
                 layers.append((name,model))
-        
+
         for i, (name, layer) in enumerate(reversed(layers)):
             print(f'layer: {name}')
 
             for parameters in layer.parameters():
                 parameters.requires_grad = True
-            
+
             optimizer = Adam(filter(lambda p: p.requires_grad, model.model.parameters()), lr = ilr/(i+1), betas=(0.9, 0.999), eps=1e-8,weight_decay=0.0005)
             model.train(data = data, epochs = epoch, optimizer=optimizer,pretrained=False,freeze = [], verbose = True)
             model.save(f'yoloPost{i}.pt')
@@ -267,7 +286,7 @@ class Classification():
 
         while 'y' in input('continue? [y/n] ').lower():
             self.useModel(modelPath=self.mdp if 'y' in input(f'use {self.mdp} model? [y/n]' ).lower() else self.saveChose(),
-                          imgPath=input('please print path to the photo and the name of the photo:  ') 
+                          imgPath=input('please print path to the photo and the name of the photo:  ')
                           )
     def saveChose(self):
         self.mdp = input('please print path to the model: ')
@@ -279,14 +298,14 @@ class Classification():
 
         result = model.predict(imgPath)[0]
         t1 = result.probs.top1
-        
+
 
 
         print(''.join(['-' for _ in range(100)])+'\n')
         print(result.probs.top5,'\n',f'1. {model.names[result.probs.top1]} : {result.probs.top1conf}\n')
         return model.names[result.probs.top1]
 if __name__ =='__main__':
-    if 'y' in input('work with train? [y/n]  ').lower(): 
+    if 'y' in input('work with train? [y/n]  ').lower():
         Train()
     elif 'y' in input('use model for classification? [y/n]  ').lower():
         Classification()
