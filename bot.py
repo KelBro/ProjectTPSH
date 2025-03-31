@@ -81,15 +81,15 @@ async def cmd_start(message: types.Message):
         parse_mode="HTML"
     )
 
-def vb_url(filters):
-    url = "https://www.wildberries.ru/catalog/0/search.aspx?search=платье"
+def generate_url(filters, m:str, p:str):
+    url = m
 
     # Кодируем параметры фильтров для URL
     for i in filters:
-        url += "%20" + i
-
+        url += p + i
     return url
 
+# вб озон ламода алик яндекс маркет
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
@@ -113,11 +113,17 @@ async def handle_photo(message: types.Message):
     ]
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
     filters = ["красное", "длинное", "пышное"]
-    v = f'<a href="{vb_url(filters)}">{tr["link"]}</a>'
     await message.answer(
-        f"{tr['photo_received1']}{v}{tr['photo_received2']}",
+        f"{tr['photo_received1']}"
+        f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", "%20")}">{tr["link_vb"]}</a>'
+        f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", "+")}">{tr["link_ozon"]}</a>'
+        f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", "+")}">{tr["link_lamoda"]}</a>'
+        f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье", "+")}">{tr["link_alik"]}</a>'
+        f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", "+")}">{tr["link_yandex"]}</a>'
+        f"{tr['photo_received2']}",
         reply_markup=keyboard,
-        parse_mode="HTML"
+        parse_mode="HTML",
+        disable_web_page_preview=True
     )
 
 
@@ -132,7 +138,6 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
         await callback.message.edit_text(tr['rename_cancel'], reply_markup=None)
     await callback.answer()
 
-# вб озон ламода алик яндекс маркет
 # изменение названия платья
 @dp.message(DressStates.waiting_for_name)
 async def process_dress_name(message: types.Message, state: FSMContext):
