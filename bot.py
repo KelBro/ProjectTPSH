@@ -11,6 +11,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config_reader import config
 import math
 from redis import StrictRedis as redis
+from io import BytesIO
+from PIL import Image
 
 r = redis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_passwd.get_secret_value())
 logging.basicConfig(level=logging.INFO)
@@ -95,6 +97,29 @@ def generate_url(filters, m:str, p:str):
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
+    global user_id
+    user_id = message.from_user.id
+    date = message.date
+    photoi = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
+    print(photoi)
+    photo_info = await bot.get_file(message.photo[2].file_id)
+    photo = await bot.download_file(photo_info.file_path)
+    photo_b = BytesIO()
+    photo = Image.open(photo)
+    photo.save(photo_b, 'JPEG')
+    photob = photo_b.getvalue()
+    with open('img.jpg', 'wb') as img:
+        img.write(photob)
+
+    r.lpush('aitasks', photoi)
+    r.set(photoi + 'b', photob)
+    while True:
+        if r.exists(photoi):
+            desc = r.get(photoi)
+            print(desc)
+            r.delete(photoi)
+            break
+
     date = datetime.now().strftime("%d.%m.%Y")
     name = 'Тест платье ' + date
     description = "ПОКА ЧТО НИЧЕГО"
