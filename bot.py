@@ -319,7 +319,7 @@ async def cmd_feedback(message: types.Message):
     feedback = feedback[10:]
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?, ?, ?)',(user_id, feedback))
+    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
     connection.commit()
     connection.close()
     await message.answer('Спасибо за ваш отзыв, мы ценим любоц вклад в наш проект!')
