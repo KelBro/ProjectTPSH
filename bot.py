@@ -13,6 +13,10 @@ import math
 from redis import StrictRedis as redis
 from PIL import Image
 from io import BytesIO
+import requests
+from bs4 import BeautifulSoup
+import asyncio
+
 
 r = redis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_passwd.get_secret_value())
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +26,10 @@ upload_id = -1
 user_id = 1
 st_num = 1
 
-print(config.ai_host.get_secret_value())
+# async def delete_webhook():
+#     await bot.delete_webhook()
+#     await bot.session.close()
+# asyncio.run(delete_webhook())
 
 # Инициализация базы данных
 def init_db():
@@ -86,12 +93,11 @@ async def cmd_start(message: types.Message):
         parse_mode="HTML"
     )
 
-def generate_url(filters, m:str, p:str):
+def generate_url(filters, m:str):
     url = m
-
     # Кодируем параметры фильтров для URL
     for i in filters:
-        url += p + i
+        url += "+" + i
     return url
 
 # вб озон ламода алик яндекс маркет
@@ -120,7 +126,7 @@ async def handle_photo(message: types.Message):
             print(desc)
             r.delete(photoi)
             break
-    
+
     date = datetime.now().strftime("%d.%m.%Y")
     name = 'Тест платье ' + date
     description = "ПОКА ЧТО НИЧЕГО"
@@ -139,15 +145,16 @@ async def handle_photo(message: types.Message):
             types.InlineKeyboardButton(text=tr['no'], callback_data="ph_no")
         ]
     ]
+    # цвет, посадка(hemiline), детали
     keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
-    filters = ["красное", "длинное", "пышное"]
+    filters = ["красное", "ассиметричное", "с карманами"]
     await message.answer(
         f"{tr['photo_received1']}"
-        f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", "%20")}">{tr["link_vb"]}</a>'
-        f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", "+")}">{tr["link_ozon"]}</a>'
-        f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", "+")}">{tr["link_lamoda"]}</a>'
-        f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье", "+")}">{tr["link_alik"]}</a>'
-        f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", "+")}">{tr["link_yandex"]}</a>'
+        f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'
+        f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'
+        f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'
+        # f'<a href="{generate_url(filters, "https://www.aliexpress.ru/wholesale?searchText=платье")}">{tr["link_alik"]}</a>'
+        f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>'
         f"{tr['photo_received2']}",
         reply_markup=keyboard,
         parse_mode="HTML",
