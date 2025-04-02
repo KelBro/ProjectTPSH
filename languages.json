@@ -1,5 +1,7 @@
 {
   "ru": {
+    "feedback_right": "Спасибо за ваш отзыв, мы ценим любой вклад в наш проект!",
+    "feedback_error": "Извините, в вашем отзыве отсутвуют символы",
     "language_change_blocked": "Сейчас нельзя сменить язык, так как вы вводите название платья",
     "yes" : "Да",
     "no" : "Нет",
@@ -67,9 +69,9 @@
     },
     "detail": {
       "name": "Детали",
-      "ruched": "гофрированное",
+      "ruched": "гофрированный",
       "zipper": "молния",
-      "twist": "скрученное",
+      "twist": "скрученный",
       "knot": "узел",
       "pocket": "карман",
       "shirred": "сборчатое",
@@ -286,6 +288,8 @@
   },
 
   "en": {
+    "feedback_right": "Thank you for your feedback, we appreciate any contribution to our project!",
+    "feedback_error": "Sorry, there are missing characters in your review.",
     "language_change_blocked": "You can't change the language now because you're entering a dress name",
     "yes" : "Yes",
     "no" : "No",

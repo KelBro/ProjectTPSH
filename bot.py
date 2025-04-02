@@ -340,7 +340,7 @@ async def cmd_feedback(message: types.Message):
     user_id = message.from_user.id
     feedback = message.text
     if len(feedback)<10:
-        await message.answer('Извините, в вашем отзыве отсутвуют символы')
+        await message.answer(tr["feedback_error"])
         return
     feedback = feedback[10:]
     connection = sqlite3.connect('data_base.db')
@@ -348,4 +348,4 @@ async def cmd_feedback(message: types.Message):
     cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
     connection.commit()
     connection.close()
-    await message.answer('Спасибо за ваш отзыв, мы ценим любоц вклад в наш проект!')
+    await message.answer(tr["feedback_right"])
