@@ -10,19 +10,26 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from config_reader import config
 import math
-from random import randint
-from detectClothing import Classification
+from redis import StrictRedis as redis
+from PIL import Image
+from io import BytesIO
+import requests
+from bs4 import BeautifulSoup
+import asyncio
 
+
+r = redis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_passwd.get_secret_value())
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())
 upload_id = -1
 user_id = 1
 st_num = 1
-ans = ""
-name = ""
 
-Classification()
+# async def delete_webhook():
+#     await bot.delete_webhook()
+#     await bot.session.close()
+# asyncio.run(delete_webhook())
 
 # Инициализация базы данных
 def init_db():
@@ -88,7 +95,6 @@ async def cmd_start(message: types.Message):
 
 def generate_url(filters, m:str):
     url = m
-
     # Кодируем параметры фильтров для URL
     for i in filters:
         url += "+" + i
@@ -104,37 +110,42 @@ def change_dict_lang(dict):
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
-    # rand = randint(0,100000)
-    # photo = 'photo' + f'{rand:0>6}'
-    # print(photo)
-    # r.lpush('aitasks', photo)
-    # while True:
-    #     if r.exists(photo):
-    #         desc = r.get(photo)
-    #         print(desc)
-    #         r.delete(photo)
-    #         break
-    photo = message.photo[-1]
-
+    global user_id
+    user_id = message.from_user.id
+    date = message.date
     proc = await message.answer(tr["processing"])
-    file = await bot.get_file(message.photo[-1].file_id)
-    fp = file.file_path
-    dw_path = 'img.jpg'
-    await bot.download_file(fp, dw_path)
-    description = ''
-    mark = Classification.GetMark(dw_path)
-    for i in mark:
-        description += f"{i}: {mark[i]}\n"
-    description = description.strip()
-    lan_description = ''
-    d = change_dict_lang(mark)
-    for i in d:
-        lan_description += f"{i}: {d[i]}\n"
-    lan_description = lan_description.strip()
+    photo_info = await bot.get_file(message.photo[-1].file_id)
+    photo = await bot.download_file(photo_info.file_path)
+    photo_buff = BytesIO()
+    photo = Image.open(photo)
+    photo.save(photo_buff, 'JPEG')
+    photo_bytes = photo_buff.getvalue()
+    photo_id = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
+    len_id = len(photo_id)
+    print(photo_id)
+
+    photo_request = len_id.to_bytes(1,'big') + photo_id.encode(encoding='utf-8') + photo_bytes
+
+    r.lpush('aitasks', photo_request)
+    while True:
+        if r.exists(photo_id):
+            desc_dict = eval(r.get(photo_id).decode(encoding='utf-8'))
+            print(desc_dict)
+            r.delete(photo_id)
+            break
 
     date = datetime.now().strftime("%d.%m.%Y")
     global name
-    name = 'Платье цвет ' + tr["a dress with color"][mark["a dress with color"]] +" "+ date
+    name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] +" "+ date
+    description = ""
+    for i in desc_dict:
+        description += f'{i}: {desc_dict[i]}\n'
+    description.strip()
+    lan_description = ''
+    d = change_dict_lang(desc_dict)
+    for i in d:
+        lan_description += f"{i}: {d[i]}\n"
+    lan_description = lan_description.strip()
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
     cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
@@ -246,6 +257,8 @@ def get_history_keyboard():
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
+    global user_id
+    user_id = message.from_user.id
     global st_num
     st_num = 1
     keyboard = get_history_keyboard()
@@ -316,3 +329,19 @@ async def handle_language_callback(callback: types.CallbackQuery):
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
+
+@dp.message(Command("feedback"))
+async def cmd_feedback(message: types.Message):
+    global user_id
+    user_id = message.from_user.id
+    feedback = message.text
+    if len(feedback)<10:
+        await message.answer('Извините, в вашем отзыве отсутвуют символы')
+        return
+    feedback = feedback[10:]
+    connection = sqlite3.connect('data_base.db')
+    cursor = connection.cursor()
+    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
+    connection.commit()
+    connection.close()
+    await message.answer('Спасибо за ваш отзыв, мы ценим любоц вклад в наш проект!')
