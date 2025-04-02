@@ -308,3 +308,18 @@ async def handle_language_callback(callback: types.CallbackQuery):
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
 
+@dp.message(Command("feedback"))
+async def cmd_feedback(message: types.Message):
+    global user_id
+    user_id = message.from_user.id
+    feedback = message.text
+    if len(feedback)<10:
+        await message.answer('Извините, в вашем отзыве отсутвуют символы')
+        return
+    feedback = feedback[10:]
+    connection = sqlite3.connect('data_base.db')
+    cursor = connection.cursor()
+    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?, ?, ?)',(user_id, feedback))
+    connection.commit()
+    connection.close()
+    await message.answer('Спасибо за ваш отзыв, мы ценим любоц вклад в наш проект!')
