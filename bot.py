@@ -100,29 +100,32 @@ async def handle_photo(message: types.Message):
     global user_id
     user_id = message.from_user.id
     date = message.date
-    photoi = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
-    print(photoi)
-    photo_info = await bot.get_file(message.photo[2].file_id)
+    print(message.photo)
+    photo_info = await bot.get_file(message.photo[-1].file_id)
     photo = await bot.download_file(photo_info.file_path)
-    photo_b = BytesIO()
+    photo_buff = BytesIO()
     photo = Image.open(photo)
-    photo.save(photo_b, 'JPEG')
-    photob = photo_b.getvalue()
-    with open('img.jpg', 'wb') as img:
-        img.write(photob)
+    photo.save(photo_buff, 'JPEG')
+    photo_bytes = photo_buff.getvalue()
+    photo_id = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
+    len_id = len(photo_id)
+    print(photo_id)
 
-    r.lpush('aitasks', photoi)
-    r.set(photoi + 'b', photob)
+    photo_request = len_id.to_bytes(1,'big') + photo_id.encode(encoding='utf-8') + photo_bytes
+
+    r.lpush('aitasks', photo_request)
     while True:
-        if r.exists(photoi):
-            desc = r.get(photoi)
-            print(desc)
-            r.delete(photoi)
+        if r.exists(photo_id):
+            desc_dict = eval(r.get(photo_id).decode(encoding='utf-8'))
+            print(desc_dict)
+            r.delete(photo_id)
             break
 
     date = datetime.now().strftime("%d.%m.%Y")
     name = 'Тест платье ' + date
-    description = "ПОКА ЧТО НИЧЕГО"
+    description = ""
+    for i in desc_dict:
+        description += f'{i}: {desc_dict[i]}\n'
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
     cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
@@ -142,6 +145,7 @@ async def handle_photo(message: types.Message):
     filters = ["красное", "длинное", "пышное"]
     await message.answer(
         f"{tr['photo_received1']}"
+        f'{description}\n'
         f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", "%20")}">{tr["link_vb"]}</a>'
         f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", "+")}">{tr["link_ozon"]}</a>'
         f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", "+")}">{tr["link_lamoda"]}</a>'
