@@ -129,10 +129,10 @@
       },
       "fabric-elasticity": {
         "name": "Эластичность",
-        "slight stretch": "легкая растяжимость",
-        "no sretch": "без растяжения",
-        "medium stretch": "средняя растяжимость",
-        "high stretch": "сильная растяжимость"
+        "slight stretch": "слегка тянется",
+        "no sretch": "не тянется",
+        "medium stretch": "средне тянется",
+        "high stretch": "сильно тянется"
       },
       "fit": {
         "name": "Посадка",
@@ -186,7 +186,7 @@
         "slot collar": "стойка",
         "gathered": "сборчатый",
         "sweetheart": "сердечко",
-        "choker": "ошейник",
+        "choker": "чокер",
         "hood": "капюшон",
         "collared": "воротник",
         "asymmetric": "асимметричный",
@@ -251,24 +251,24 @@
       "type": {
         "name": "Тип",
         "cami top": "топ на бретелях",
-        "a line skirt": "юбка А-силуэта",
+        "a line skirt": "юбка-трапеция",
         "bodycon skirt": "облегающая юбка",
         "t shirt": "футболка",
         "cargo shorts": "карго-шорты",
         "fit and flare": "приталенное с расклешением",
         "tunic": "туника",
         "button up shirt": "рубашка на пуговицах",
-        "bishop sleeve": "рукав епископа",
+        "bishop sleeve": "широкий рукав",
         "smock": "платье-рубашка",
         "tankini": "топ от купальника",
-        "flounce sleeve": "рукав с воланом",
-        "skorts": "шорты-юбка",
+        "flounce sleeve": "рукава с оборкой",
+        "skorts": "юбка-шорты",
         "suit": "костюм",
         "regular sleeve": "обычный рукав",
-        "batwing sleeve": "летучая мышь",
-        "raglan sleeve": "реглан",
+        "batwing sleeve": "рукав летучая мышь",
+        "raglan sleeve": "рукав реглан",
         "puffer jacket": "пуховик",
-        "leg of mutton sleeve": "рукав бараний окорок",
+        "leg of mutton sleeve": "широкий, суживающийся к низу рукав",
         "sweatshirt": "толстовка",
         "pinafore": "сарафан",
         "set": "комплект",
@@ -316,7 +316,7 @@
     "empty": "Empty",
     "parameters": {
       "a dress with color": {
-        "name": "a dress with color",
+        "name": "Color",
         "green": "green",
         "purple": "purple",
         "apricot": "apricot",
@@ -347,7 +347,7 @@
         "violet": "violet"
       },
       "detail": {
-        "name": "detail",
+        "name": "Detail",
         "ruched": "ruched",
         "zipper": "zipper",
         "twist": "twist",
@@ -412,20 +412,20 @@
         "contrast collar": "contrast collar"
       },
       "fabric-elasticity": {
-        "name": "fabric-elasticity",
+        "name": "Fabric elasticity",
         "slight stretch": "slight stretch",
         "no sretch": "no sretch",
         "medium stretch": "medium stretch",
         "high stretch": "high stretch"
       },
       "fit": {
-        "name": "fit",
+        "name": "Fit",
         "fitted": "fitted",
         "loose": "loose",
         "oversize": "oversize"
       },
       "hemline": {
-        "name": "hemline",
+        "name": "Hemline",
         "pencil": "pencil",
         "slit": "slit",
         "wrap": "wrap",
@@ -438,7 +438,7 @@
         "ball gown": "ball gown"
       },
       "material": {
-        "name": "material",
+        "name": "Material",
         "knit": "knit",
         "woven": "woven",
         "gabardine": "gabardine",
@@ -458,7 +458,7 @@
         "wool": "wool"
       },
       "neckline": {
-        "name": "neckline",
+        "name": "Neckline",
         "spaghetti straps": "spaghetti straps",
         "v neck": "v neck",
         "round": "round",
@@ -482,7 +482,7 @@
         "waterfall": "waterfall"
       },
       "pattern": {
-        "name": "pattern",
+        "name": "Pattern",
         "solid": "solid",
         "stripes": "stripes",
         "colorblock": "colorblock",
@@ -522,7 +522,7 @@
         "ombre": "ombre"
       },
       "style": {
-        "name": "style",
+        "name": "Style",
         "sexy": "sexy",
         "elegant": "elegant",
         "boho": "boho",
@@ -533,11 +533,11 @@
         "cute": "cute"
       },
       "type": {
-        "name": "type",
+        "name": "Type",
         "cami top": "cami top",
         "a line skirt": "a line skirt",
         "bodycon skirt": "bodycon skirt",
-        "t shirt": "t shirt",
+        "t-shirt": "t-shirt",
         "cargo shorts": "cargo shorts",
         "fit and flare": "fit and flare",
         "tunic": "tunic",
@@ -559,7 +559,7 @@
         "bomber jacket": "bomber jacket"
       },
       "waistline": {
-        "name": "waistline",
+        "name": "Waistline",
         "high": "high",
         "regular": "regular",
         "no waist": "no waist"
