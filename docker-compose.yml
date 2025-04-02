@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  ai_model:
+    build: ./ai_models
+    volumes:
+      - ./ai_models:/app
+    depends_on:
+      - redis
+
+  telegram_bot:
+    build: ./telegram_bot
+    volumes:
+      - ./telegram_bot:/app
+    depends_on:
+      - ai_models
+      - redis
+
+  redis:
+    image: redis:7.2
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
