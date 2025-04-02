@@ -10,26 +10,19 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from config_reader import config
 import math
-from redis import StrictRedis as redis
-from PIL import Image
-from io import BytesIO
-import requests
-from bs4 import BeautifulSoup
-import asyncio
+from random import randint
+from detectClothing import Classification
 
-
-r = redis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_passwd.get_secret_value())
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())
 upload_id = -1
 user_id = 1
 st_num = 1
+ans = ""
+name = ""
 
-# async def delete_webhook():
-#     await bot.delete_webhook()
-#     await bot.session.close()
-# asyncio.run(delete_webhook())
+Classification()
 
 # Инициализация базы данных
 def init_db():
@@ -95,44 +88,53 @@ async def cmd_start(message: types.Message):
 
 def generate_url(filters, m:str):
     url = m
+
     # Кодируем параметры фильтров для URL
     for i in filters:
         url += "+" + i
     return url
 
+def change_dict_lang(dict):
+    lan_dict = {}
+    for key in dict:
+        lan_dict[tr[key]["name"]] = tr[key][dict[key]]
+    return lan_dict
+
 # вб озон ламода алик яндекс маркет
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
-    global user_id
-    user_id = message.from_user.id
-    date = message.date
-    print(message.photo)
-    photo_info = await bot.get_file(message.photo[-1].file_id)
-    photo = await bot.download_file(photo_info.file_path)
-    photo_buff = BytesIO()
-    photo = Image.open(photo)
-    photo.save(photo_buff, 'JPEG')
-    photo_bytes = photo_buff.getvalue()
-    photo_id = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
-    len_id = len(photo_id)
-    print(photo_id)
+    # rand = randint(0,100000)
+    # photo = 'photo' + f'{rand:0>6}'
+    # print(photo)
+    # r.lpush('aitasks', photo)
+    # while True:
+    #     if r.exists(photo):
+    #         desc = r.get(photo)
+    #         print(desc)
+    #         r.delete(photo)
+    #         break
+    photo = message.photo[-1]
 
-    photo_request = len_id.to_bytes(1,'big') + photo_id.encode(encoding='utf-8') + photo_bytes
-
-    r.lpush('aitasks', photo_request)
-    while True:
-        if r.exists(photo_id):
-            desc_dict = eval(r.get(photo_id).decode(encoding='utf-8'))
-            print(desc_dict)
-            r.delete(photo_id)
-            break
+    proc = await message.answer(tr["processing"])
+    file = await bot.get_file(message.photo[-1].file_id)
+    fp = file.file_path
+    dw_path = 'img.jpg'
+    await bot.download_file(fp, dw_path)
+    description = ''
+    mark = Classification.GetMark(dw_path)
+    for i in mark:
+        description += f"{i}: {mark[i]}\n"
+    description = description.strip()
+    lan_description = ''
+    d = change_dict_lang(mark)
+    for i in d:
+        lan_description += f"{i}: {d[i]}\n"
+    lan_description = lan_description.strip()
 
     date = datetime.now().strftime("%d.%m.%Y")
-    name = 'Тест платье ' + date
-    description = ""
-    for i in desc_dict:
-        description += f'{i}: {desc_dict[i]}\n'
+    global name
+    name = 'Платье цвет ' + tr["a dress with color"][mark["a dress with color"]] +" "+ date
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
     cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
@@ -142,28 +144,33 @@ async def handle_photo(message: types.Message):
     connection.commit()
     connection.close()
 
-    buttons = [
-        [
+    await proc.delete()
+    if 'it not' not in description.lower():
+        buttons = [
+            [
             types.InlineKeyboardButton(text=tr['yes'], callback_data="ph_yes"),
             types.InlineKeyboardButton(text=tr['no'], callback_data="ph_no")
+            ]
         ]
-    ]
-    # цвет, посадка(hemiline), детали
-    keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
-    filters = ["красное", "ассиметричное", "с карманами"]
-    await message.answer(
-        f"{tr['photo_received1']}"
-        f'{description}\n'
-        f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'
-        f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'
-        f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'
-        # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'
-        f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>'
-        f"{tr['photo_received2']}",
-        reply_markup=keyboard,
-        parse_mode="HTML",
-        disable_web_page_preview=True
-    )
+        keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+        filters = [tr["a dress with color"][mark["a dress with color"]], tr["hemline"][mark["hemline"]], tr["detail"][mark["detail"]]]
+        global ans
+        ans = (f'{lan_description}\n'+
+            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'+
+            # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
+            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
+        await message.answer(
+            f"{tr['photo_received1']}\n"+
+            ans+
+            f"{tr['photo_received2']}{name}{tr['photo_received22']}",
+            reply_markup=keyboard,
+            parse_mode="HTML",
+            disable_web_page_preview=True
+        )
+    else:
+        await message.answer(tr["not_a_dress"])
 
 
 # обработчик инлайн-кнопок подтверждения фото
@@ -174,7 +181,7 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
         await callback.message.answer(tr['rename_prompt'])
         await state.set_state(DressStates.waiting_for_name)
     elif action == "no":
-        await callback.message.edit_text(tr['rename_cancel'], reply_markup=None)
+        await callback.message.edit_text(tr['rename_cancel']+ans+tr['photo_received2']+name, reply_markup=None,parse_mode="HTML",disable_web_page_preview=True)
     await callback.answer()
 
 # изменение названия платья
@@ -182,7 +189,12 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
 async def process_dress_name(message: types.Message, state: FSMContext):
     new_name = message.text
     if new_name != tr["language"] and new_name != tr["history"]:
-        await message.answer(tr['rename_success'] + new_name)
+        await message.answer(
+            ans +
+            f"{tr['photo_received2']}{new_name}",
+            parse_mode="HTML",
+            disable_web_page_preview=True
+        )
         await state.clear()
 
         connection = sqlite3.connect('data_base.db')
@@ -234,9 +246,6 @@ def get_history_keyboard():
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
-    global user_id
-    user_id = message.from_user.id
-    print(user_id)
     global st_num
     st_num = 1
     keyboard = get_history_keyboard()
@@ -307,4 +316,3 @@ async def handle_language_callback(callback: types.CallbackQuery):
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
-
