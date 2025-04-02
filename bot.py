@@ -138,28 +138,35 @@ async def handle_photo(message: types.Message):
             break
 
     date = datetime.now().strftime("%d.%m.%Y")
-    global name
-    name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
+
     description = ""
     for i in desc_dict:
         description += f'{i}: {desc_dict[i]}\n'
     description.strip()
-    lan_description = ''
-    d = change_dict_lang(desc_dict)
-    for i in d:
-        lan_description += f"{i}: {d[i]}\n"
-    lan_description = lan_description.strip()
-    connection = sqlite3.connect('data_base.db')
-    cursor = connection.cursor()
-    cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
-                   (user_id, name, description, date))
-    global upload_id
-    upload_id = cursor.lastrowid
-    connection.commit()
-    connection.close()
+
 
     await proc.delete()
-    if 'it not' not in description.lower():
+    if desc_dict['department'] != 'it not a dress':
+        # Перевод описания
+        lan_description = ''
+        d = change_dict_lang(desc_dict)
+        for i in d:
+            lan_description += f"{i}: {d[i]}\n"
+        lan_description = lan_description.strip()
+
+        # Сохранение в базу данных
+        global name
+        name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
+
+        connection = sqlite3.connect('data_base.db')
+        cursor = connection.cursor()
+        cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
+                       (user_id, name, description, date))
+        global upload_id
+        upload_id = cursor.lastrowid
+        connection.commit()
+        connection.close()
+
         buttons = [
             [
             types.InlineKeyboardButton(text=tr['yes'], callback_data="ph_yes"),
@@ -167,6 +174,8 @@ async def handle_photo(message: types.Message):
             ]
         ]
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+
+        # Ссылки на маркетплейсы
         filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
         global ans
         ans = (f'{lan_description}\n'+
