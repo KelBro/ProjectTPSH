@@ -282,7 +282,11 @@
         "high": "высокая",
         "regular": "стандартная",
         "no waist": "без талии"
-      }
+      },
+    "department" : {
+      "name": "",
+      "dress": ""
+    }
   },
 
   "en": {
@@ -568,6 +572,10 @@
         "high": "high",
         "regular": "regular",
         "no waist": "no waist"
-      }
+      },
+    "department" : {
+      "name": "",
+      "dress": ""
+    }
   }
 }
