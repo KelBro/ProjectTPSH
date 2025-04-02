@@ -25,6 +25,9 @@ dp = Dispatcher(storage=MemoryStorage())
 upload_id = -1
 user_id = 1
 st_num = 1
+ans = ""
+name = ""
+
 
 # async def delete_webhook():
 #     await bot.delete_webhook()
@@ -136,7 +139,7 @@ async def handle_photo(message: types.Message):
 
     date = datetime.now().strftime("%d.%m.%Y")
     global name
-    name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] +" "+ date
+    name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
     description = ""
     for i in desc_dict:
         description += f'{i}: {desc_dict[i]}\n'
@@ -164,7 +167,7 @@ async def handle_photo(message: types.Message):
             ]
         ]
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
-        filters = [tr["a dress with color"][mark["a dress with color"]], tr["hemline"][mark["hemline"]], tr["detail"][mark["detail"]]]
+        filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
         global ans
         ans = (f'{lan_description}\n'+
             f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'+
@@ -330,6 +333,7 @@ async def handle_language_callback(callback: types.CallbackQuery):
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
 
+# обработчик команды /feedback
 @dp.message(Command("feedback"))
 async def cmd_feedback(message: types.Message):
     global user_id

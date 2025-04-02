@@ -1,4 +1,4 @@
-from NBot import dp, bot
+from bot import dp, bot
 import asyncio
 
 
