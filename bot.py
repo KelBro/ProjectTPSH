@@ -366,9 +366,4 @@ async def cmd_feedback(message: types.Message):
         return
     feedback = feedback[10:]
     await bot.send_message(chat_id=feedback_chat_id, text=f'({user_id}){message.from_user.username}: {feedback}')
-    connection = sqlite3.connect('data_base.db')
-    cursor = connection.cursor()
-    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
-    connection.commit()
-    connection.close()
     await message.answer(tr["feedback_right"])
