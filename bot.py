@@ -8,6 +8,7 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+
 from config_reader import config
 import math
 from redis import StrictRedis as redis
@@ -22,6 +23,7 @@ r = redis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_
 logging.basicConfig(level=logging.INFO)
 bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())
+feedback_chat_id = -1002411249654
 upload_id = -1
 user_id = 1
 st_num = 1
@@ -33,6 +35,7 @@ name = ""
 #     await bot.delete_webhook()
 #     await bot.session.close()
 # asyncio.run(delete_webhook())
+
 
 # Инициализация базы данных
 def init_db():
@@ -84,6 +87,7 @@ def get_keyboard(tr):
 # обработчик команды /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
     global tr
@@ -113,6 +117,7 @@ def change_dict_lang(dict):
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
+    if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
     date = message.date
@@ -184,16 +189,20 @@ async def handle_photo(message: types.Message):
             f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'+
             # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
             f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
-        await message.answer(
+        await bot.send_message(text=
             f"{tr['photo_received1']}\n"+
             ans+
             f"{tr['photo_received2']}{name}{tr['photo_received22']}",
             reply_markup=keyboard,
             parse_mode="HTML",
-            disable_web_page_preview=True
+            disable_web_page_preview=True,
+            chat_id=message.chat.id,
+            reply_to_message_id=message.message_id
         )
     else:
-        await message.answer(tr["not_a_dress"])
+        await bot.send_message(text=tr["not_a_dress"],
+                               chat_id=message.chat.id,
+                               reply_to_message_id=message.message_id)
 
 
 # обработчик инлайн-кнопок подтверждения фото
@@ -269,6 +278,7 @@ def get_history_keyboard():
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
+    if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
     global st_num
@@ -315,6 +325,7 @@ async def history_menu(callback: types.CallbackQuery):
 # обработчик кнопки "Язык"
 @dp.message(lambda message: message.text in [lang['language'] for lang in TRANSLATIONS.values()])
 async def handle_language(message: types.Message):
+    if message.chat.id < 0: return
     buttons = [
         [types.InlineKeyboardButton(text=tr['options']['ru'], callback_data="lan_ru")],
         [types.InlineKeyboardButton(text=tr['options']['en'], callback_data="lan_en")]
@@ -340,11 +351,13 @@ async def handle_language_callback(callback: types.CallbackQuery):
 # обработчик команды /help
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
+    if message.chat.id < 0: return
     await message.answer(tr['help'])
 
 # обработчик команды /feedback
 @dp.message(Command("feedback"))
 async def cmd_feedback(message: types.Message):
+    if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
     feedback = message.text
@@ -352,6 +365,7 @@ async def cmd_feedback(message: types.Message):
         await message.answer(tr["feedback_error"])
         return
     feedback = feedback[10:]
+    await bot.send_message(chat_id=feedback_chat_id, text=f'({user_id}){message.from_user.username}: {feedback}')
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
     cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
