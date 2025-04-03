@@ -8,7 +8,7 @@ from aiogram.filters.command import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
-
+import json
 from config_reader import config
 import math
 from redis import StrictRedis as redis
@@ -104,7 +104,8 @@ def generate_url(filters, m:str):
     url = m
     # Кодируем параметры фильтров для URL
     for i in filters:
-        url += "+" + i
+        if i != tr["detail"]["nodetail"]:
+            url += "+" + i
     return url
 
 def change_dict_lang(dict):
@@ -138,7 +139,7 @@ async def handle_photo(message: types.Message):
     while True:
         if r.exists(photo_id):
             desc_dict = eval(r.get(photo_id).decode(encoding='utf-8'))
-            print(desc_dict)
+            print("lool",desc_dict)
             r.delete(photo_id)
             break
 
@@ -156,9 +157,10 @@ async def handle_photo(message: types.Message):
         lan_description = ''
         d = change_dict_lang(desc_dict)
         for i in d:
-            lan_description += f"{i}: {d[i]}\n"
+            print(i)
+            if i != "":
+                lan_description += f"{i}: {d[i]}\n"
         lan_description = lan_description.strip()
-
         # Сохранение в базу данных
         global name
         name = tr["name_start"] + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
@@ -166,7 +168,7 @@ async def handle_photo(message: types.Message):
         connection = sqlite3.connect('data_base.db')
         cursor = connection.cursor()
         cursor.execute('INSERT INTO uploads (user_id, name, description, upload_date) VALUES (?, ?, ?, ?)',
-                       (user_id, name, description, date))
+                       (user_id, name, str(desc_dict), date))
         global upload_id
         upload_id = cursor.lastrowid
         connection.commit()
@@ -316,13 +318,23 @@ async def history_menu(callback: types.CallbackQuery):
 
         if item:
             lan_description = ""
-            d = change_dict_lang(item[4])
+            dict = json.loads(item[3].replace("'", '"'))
+            d = change_dict_lang(dict)
             for i in d:
-                lan_description += f"{i}: {d[i]}\n"
+                if i != "":
+                    lan_description += f"{i}: {d[i]}\n"
             lan_description = lan_description.strip()
+            filters = [tr["a dress with color"][dict["a dress with color"]], tr["hemline"][dict["hemline"]],
+                       tr["detail"][dict["detail"]]]
+            links = (f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>' +
+                   # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
+                   f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
             await callback.message.answer(
-                f"{hbold(item[2])}\n\n{item[3]}\n{lan_description}",
-                parse_mode="HTML"
+                f"{hbold(item[2])}\n\n{lan_description}\n{links}\n{item[4]}",
+                parse_mode="HTML",
+                disable_web_page_preview=True
             )
         await callback.answer()
 

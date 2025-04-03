@@ -69,6 +69,7 @@
     },
     "detail": {
       "name": "Детали",
+      "nodetail": "нет деталей",
       "ruched": "гофрированный",
       "zipper": "молния",
       "twist": "скрученный",
@@ -361,6 +362,7 @@
       },
     "detail": {
       "name": "Detail",
+      "nodetail": "no details",
       "ruched": "ruched",
       "zipper": "zipper",
       "twist": "twist",
