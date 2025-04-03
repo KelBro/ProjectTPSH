@@ -156,7 +156,7 @@ async def handle_photo(message: types.Message):
 
         # Сохранение в базу данных
         global name
-        name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
+        name = tr["name_start"] + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
 
         connection = sqlite3.connect('data_base.db')
         cursor = connection.cursor()
@@ -305,8 +305,13 @@ async def history_menu(callback: types.CallbackQuery):
         connection.close()
 
         if item:
+            lan_description = ""
+            d = change_dict_lang(item[4])
+            for i in d:
+                lan_description += f"{i}: {d[i]}\n"
+            lan_description = lan_description.strip()
             await callback.message.answer(
-                f"{hbold(item[2])}\n\n{item[3]}\n{item[4]}",
+                f"{hbold(item[2])}\n\n{item[3]}\n{lan_description}",
                 parse_mode="HTML"
             )
         await callback.answer()
