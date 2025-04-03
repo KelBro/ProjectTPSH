@@ -59,12 +59,8 @@ def init_db():
 init_db()
 
 TRANSLATIONS = json.load(open("languages.json", encoding="utf-8"))
-
-
 def get_translations(lang):
     return TRANSLATIONS[lang]
-
-
 tr = get_translations("ru")
 
 
@@ -75,8 +71,9 @@ class DressStates(StatesGroup):
 # пересоздание клавиатуры
 def get_keyboard(tr):
     kb = [
-        [types.KeyboardButton(text=tr['history']),
-         types.KeyboardButton(text=tr['language'])]
+        [types.KeyboardButton(text=tr['history'])],
+        [types.KeyboardButton(text=tr['feedback']),
+        types.KeyboardButton(text=tr['language'])]
     ]
     return types.ReplyKeyboardMarkup(
         keyboard=kb,
@@ -114,7 +111,7 @@ def change_dict_lang(dict):
         lan_dict[tr[key]["name"]] = tr[key][dict[key]]
     return lan_dict
 
-# вб озон ламода алик яндекс маркет
+
 # обработчик получения фотографии
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
@@ -123,6 +120,7 @@ async def handle_photo(message: types.Message):
     user_id = message.from_user.id
     date = message.date
     proc = await message.answer(tr["processing"])
+    await bot.send_chat_action(message.chat.id, "typing")
     photo_info = await bot.get_file(message.photo[-1].file_id)
     photo = await bot.download_file(photo_info.file_path)
     photo_buff = BytesIO()
@@ -246,7 +244,7 @@ def get_history_keyboard():
         FROM uploads 
         WHERE user_id = ?
     """, (user_id,))
-    lines = cursor.fetchall()
+    lines = (cursor.fetchall())[::-1]
     connection.close()
 
     total_items = len(lines)
@@ -371,9 +369,8 @@ async def cmd_help(message: types.Message):
     if message.chat.id < 0: return
     await message.answer(tr['help'])
 
-# обработчик команды /feedback
-@dp.message(Command("feedback"))
-async def cmd_feedback(message: types.Message):
+@dp.message(lambda message: message.text in [lang['feedback'] for lang in TRANSLATIONS.values()])
+async def handle_feedback(message: types.Message):
     if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
