@@ -14,6 +14,7 @@ import math
 from redis import StrictRedis as redis
 from PIL import Image
 from io import BytesIO
+from collections import defaultdict
 import requests
 from bs4 import BeautifulSoup
 import asyncio
@@ -25,11 +26,6 @@ bot = Bot(token=config.bot_token.get_secret_value())
 dp = Dispatcher(storage=MemoryStorage())
 feedback_chat_id = -1002411249654
 upload_id = -1
-user_id = 1
-st_num = 1
-ans = ""
-name = ""
-
 
 # async def delete_webhook():
 #     await bot.delete_webhook()
@@ -64,13 +60,18 @@ TRANSLATIONS = json.load(open("languages.json", encoding="utf-8"))
 def get_translations(lang):
     return TRANSLATIONS[lang]
 
+class User:
+    def __init__(self):
+        self.st_num = 1
+        self.ans = ""
+        self.name = ""
+        self.lang = "ru"
 
-tr = get_translations("ru")
 
+users_dict = defaultdict(User)
 
 class DressStates(StatesGroup):
     waiting_for_name = State()
-
 
 # пересоздание клавиатуры
 def get_keyboard(tr):
@@ -83,15 +84,12 @@ def get_keyboard(tr):
         resize_keyboard=True
     )
 
-
 # обработчик команды /start
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     if message.chat.id < 0: return
-    global user_id
     user_id = message.from_user.id
-    global tr
-    tr = get_translations("ru")
+    tr = get_translations(users_dict[user_id].lang)
     await message.answer(
         f"{hbold(tr['greeting'])}"
         f"{tr['description']}"
@@ -107,7 +105,7 @@ def generate_url(filters, m:str):
         url += "+" + i
     return url
 
-def change_dict_lang(dict):
+def change_dict_lang(dict, tr):
     lan_dict = {}
     for key in dict:
         lan_dict[tr[key]["name"]] = tr[key][dict[key]]
@@ -118,8 +116,8 @@ def change_dict_lang(dict):
 @dp.message(F.photo)
 async def handle_photo(message: types.Message):
     if message.chat.id < 0: return
-    global user_id
     user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     date = message.date
     proc = await message.answer(tr["processing"])
     photo_info = await bot.get_file(message.photo[-1].file_id)
@@ -154,14 +152,14 @@ async def handle_photo(message: types.Message):
     if desc_dict['department'] != 'it not a dress':
         # Перевод описания
         lan_description = ''
-        d = change_dict_lang(desc_dict)
+        d = change_dict_lang(desc_dict, tr)
         for i in d:
             lan_description += f"{i}: {d[i]}\n"
         lan_description = lan_description.strip()
 
         # Сохранение в базу данных
-        global name
         name = 'Платье цвет ' + tr["a dress with color"][desc_dict["a dress with color"]] + " " + date
+        users_dict[user_id].name = name
 
         connection = sqlite3.connect('data_base.db')
         cursor = connection.cursor()
@@ -182,13 +180,13 @@ async def handle_photo(message: types.Message):
 
         # Ссылки на маркетплейсы
         filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
-        global ans
         ans = (f'{lan_description}\n'+
             f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'+
             f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'+
             f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'+
             # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
             f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
+        users_dict[user_id].ans = ans
         await bot.send_message(text=
             f"{tr['photo_received1']}\n"+
             ans+
@@ -208,6 +206,10 @@ async def handle_photo(message: types.Message):
 # обработчик инлайн-кнопок подтверждения фото
 @dp.callback_query(F.data.startswith("ph_"))
 async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
+    ans = users_dict[user_id].ans
+    name = users_dict[user_id].name
     action = callback.data.split("_")[1]
     if action == "yes":
         await callback.message.answer(tr['rename_prompt'])
@@ -219,6 +221,9 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
 # изменение названия платья
 @dp.message(DressStates.waiting_for_name)
 async def process_dress_name(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
+    ans = users_dict[user_id].ans
     new_name = message.text
     if new_name != tr["language"] and new_name != tr["history"]:
         await message.answer(
@@ -236,7 +241,7 @@ async def process_dress_name(message: types.Message, state: FSMContext):
         connection.close()
 
 
-def get_history_keyboard():
+def get_history_keyboard(user_id, tr):
     connection = sqlite3.connect("data_base.db")
     cursor = connection.cursor()
     cursor.execute("""
@@ -246,6 +251,7 @@ def get_history_keyboard():
     """, (user_id,))
     lines = cursor.fetchall()
     connection.close()
+    st_num = users_dict[user_id].st_num
 
     total_items = len(lines)
     items_per_page = 5
@@ -278,29 +284,31 @@ def get_history_keyboard():
 # обработчик кнопки "История"
 @dp.message(lambda message: message.text in [lang['history'] for lang in TRANSLATIONS.values()])
 async def handle_history(message: types.Message):
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     if message.chat.id < 0: return
     global user_id
     user_id = message.from_user.id
-    global st_num
-    st_num = 1
-    keyboard = get_history_keyboard()
+    users_dict[user_id].st_num = 1
+    keyboard = get_history_keyboard(user_id, tr)
     await message.answer(tr['call_history'], reply_markup=keyboard)
 
 
 @dp.callback_query(F.data.startswith("his_"))
 async def history_menu(callback: types.CallbackQuery):
-    global st_num
+    user_id = callback.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     data = callback.data.split("_")
     action = data[1]
 
     if action == "prev":
-        st_num -= 1
-        keyboard = get_history_keyboard()
+        users_dict[user_id].st_num -= 1
+        keyboard = get_history_keyboard(user_id, tr)
         await callback.message.edit_reply_markup(reply_markup=keyboard)
         await callback.answer()
     elif action == "next":
-        st_num += 1
-        keyboard = get_history_keyboard()
+        users_dict[user_id].st_num += 1
+        keyboard = get_history_keyboard(user_id, tr)
         await callback.message.edit_reply_markup(reply_markup=keyboard)
         await callback.answer()
     elif action == "empty":
@@ -326,6 +334,8 @@ async def history_menu(callback: types.CallbackQuery):
 @dp.message(lambda message: message.text in [lang['language'] for lang in TRANSLATIONS.values()])
 async def handle_language(message: types.Message):
     if message.chat.id < 0: return
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     buttons = [
         [types.InlineKeyboardButton(text=tr['options']['ru'], callback_data="lan_ru")],
         [types.InlineKeyboardButton(text=tr['options']['en'], callback_data="lan_en")]
@@ -337,9 +347,10 @@ async def handle_language(message: types.Message):
 # обработчик инлайн-кнопок языка
 @dp.callback_query(F.data.startswith("lan_"))
 async def handle_language_callback(callback: types.CallbackQuery):
-    global tr
+    user_id = callback.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     action = callback.data.split("_")[1]
-    tr = get_translations(action)
+    # запись в датабазу лэнгвич со значением action
     await callback.message.delete()
     await callback.message.answer(
         tr[f'changed_{action}'],
@@ -352,14 +363,16 @@ async def handle_language_callback(callback: types.CallbackQuery):
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
     if message.chat.id < 0: return
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     await message.answer(tr['help'])
 
 # обработчик команды /feedback
 @dp.message(Command("feedback"))
 async def cmd_feedback(message: types.Message):
     if message.chat.id < 0: return
-    global user_id
     user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
     feedback = message.text
     if len(feedback)<10:
         await message.answer(tr["feedback_error"])
