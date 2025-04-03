@@ -14,8 +14,6 @@ from albumentations import (
     Compose, Rotate, HorizontalFlip, RandomBrightnessContrast,
     RandomCrop, VerticalFlip, RGBShift, ElasticTransform
 )
-import numpy as np
-
 
 
 class Train:
@@ -27,8 +25,10 @@ class Train:
         df = self.readTheParquet()
         # self.startTrain()
         print('read')
-        self.numList = ['a dress with color', 'department', 'detail', 'fabric-elasticity', 'fit', 'hemline', 'material', 'neckline', 'pattern', 'sleeve-length', 'style', 'type', 'waistline']
-
+        self.numList = [
+            'a dress with color', 'department', 'detail', 'fabric-elasticity', 'fit', 'hemline',
+            'material', 'neckline', 'pattern', 'sleeve-length', 'style', 'type', 'waistline'
+        ]
 
         #  get the converted dataset from the file.csv
         # self.saveDataset(df=self.DF)
@@ -36,6 +36,7 @@ class Train:
         OBBdf = pd.read_csv('datas.csv')
         print('iis')
         print(len(OBBdf.values.tolist()))
+
         # self.augmentTheDataset(OBBdf.values.tolist())
         self.yoloCoving(df=OBBdf.values.tolist())
 
@@ -46,7 +47,6 @@ class Train:
 
         # self.useModel(modelPath='',imgPath='')
 
-
         # newDf = self.saveDataset(df=self.DF)
 
         # self.convert(type = 'train', df = df1, num=self.numList[self.lls])
@@ -55,7 +55,6 @@ class Train:
         # for i in self.numList:
 
         #     print(self.getClasses(df=self.DF, num=i))
-
 
     def yoloCoving(self,df:list):
         """  """
@@ -75,28 +74,35 @@ class Train:
 
         for i in df1:
             try:
-                il+=1
+                il += 1
                 os.makedirs(path1+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
                 shutil.copy(i[1], path1+eval(i[2])[self.numList[self.lls]]+'/')
-            except: ''
+            except:
+                pass
         print('train ready')
         for i in df2:
             try:
                 os.makedirs(path2+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
-            except:''
+            except:
+                pass
             try:
                 shutil.copy(i[1], path2+eval(i[2])[self.numList[self.lls]]+'/')
-            except: ''
+            except:
+                pass
         print('test ready')
+
         for i in df3:
 
             try:
                 os.makedirs(path3+eval(i[2])[self.numList[self.lls]]+'/',exist_ok=True)
-            except:''
+            except:
+                pass
             try:
                 shutil.copy(i[1], path3+eval(i[2])[self.numList[self.lls]]+'/')
-            except: ''
+            except:
+                pass
         print('val ready')
+
         self.createYAML()
         # for i in df:
         #     try:
@@ -106,32 +112,33 @@ class Train:
         #         il+=1
         # print(il)
 
-
-    def augmentTheDataset(self,df:list):
+    def augmentTheDataset(self, df: list):
         its = 0
+        ef = 999
+        Pol = 0
         for i in range(len(df)):
-            df[i]=df[i][1:]
+            df[i] = df[i][1:]
         ndf = df.copy()
         print(ndf[1])
-        ef =999
-        Pol =0
+
         for i in df:
             listImg = self.augementation(image_path=i[0])
             for e in listImg:
-                ef +=1
-                Pol+=1
+                ef += 1
+                Pol += 1
                 if ef ==1000:
-                    ef=0
+                    ef = 0
                     print(Pol)
-                its+=1
+                its += 1
                 e.save(f'./Nimage/Aug{its}.png')
                 ndf.append([f'./Nimage/Aug{its}.png', i[1]])
-                if Pol==10700:
+                if Pol == 10700:
                     ndf = pd.DataFrame(ndf,columns = ['path', 'text'])
                     ndf.to_csv('datasNew.csv')
                     print('er')
                     return ''
         print('tr')
+
         ndf = pd.DataFrame(ndf,columns = ['path', 'text'])
         ndf.to_csv('datasNew.csv')
 
@@ -171,7 +178,7 @@ class Train:
         df4 = pq.read_table(f'{dataPath}dataset4.parquet').to_pandas()
         df5 = pq.read_table(f'{dataPath}dataset5.parquet').to_pandas()
 
-        df = pd.concat([df1,df2,df3,df4,df5]).values.tolist()
+        df = pd.concat([df1, df2, df3, df4, df5]).values.tolist()
         for i in df:
             cef = {}
             for f in f'{i[1]}\n'.split(','):
@@ -186,7 +193,7 @@ class Train:
 
         return df
 
-    def convert(self, df:list, type:str, num:str): # part of dataframe and the type for exmp: train
+    def convert(self, df: list, type: str, num: str):   # part of dataframe and the type for exmp: train
         """ convert dataframe to dataframe for YOLO V8"""
         for i in range(len(df)):
             img = df[i][0]['bytes']
@@ -197,7 +204,8 @@ class Train:
                 os.makedirs(f'./dataset{self.lls}/{type}/{df[i][1][num]}/',exist_ok=True)
 
                 img.save(f'./dataset{self.lls}/{type}/{df[i][1][num]}/img{i}.png')
-            except:''
+            except:
+                pass
 
     def saveDataset(self,df):
         """ save the dataset to usb may be """
@@ -208,7 +216,7 @@ class Train:
             img = Image.open(img)
             img.save(f'./image/image{count}.png')
             i[0] = (f'./image/image{count}.png')
-            count+=1
+            count += 1
         df = pd.DataFrame(df,columns = ['path', 'text'])
         df.to_csv('datas.csv')
         return df
@@ -222,7 +230,7 @@ class Train:
                 if i[1][num] not in cl:
                     cl.append(i[1][num])
             except:
-                count+=1
+                count += 1
 
         # if count!=0: print(count)
         return cl
@@ -243,11 +251,6 @@ nc: {len(ls)}
 names: {str(ls)}
         """)
 
-
-
-
-
-
     def train(self, data, model, epoch:int, ilr = 1e-4):
         """ train the model """
 
@@ -266,8 +269,9 @@ names: {str(ls)}
             for parameters in layer.parameters():
                 parameters.requires_grad = True
 
-            optimizer = Adam(filter(lambda p: p.requires_grad, model.model.parameters()), lr = ilr/(i+1), betas=(0.9, 0.999), eps=1e-8,weight_decay=0.0005)
-            model.train(data = data, epochs = epoch, optimizer=optimizer,pretrained=False,freeze = [], verbose = True)
+            optimizer = Adam(filter(lambda p: p.requires_grad, model.model.parameters()), lr=ilr/(i+1),
+                             betas=(0.9, 0.999), eps=1e-8,weight_decay=0.0005)
+            model.train(data=data, epochs=epoch, optimizer=optimizer, pretrained=False, freeze=[], verbose=True)
             model.save(f'yoloPost{i}.pt')
 
     def startTrain(self):
@@ -277,34 +281,37 @@ names: {str(ls)}
         trData = self.pathToYaml
         self.train(model=model, data=trData, epoch=5,ilr=1e-4)
 
-class Classification():
+
+class Classification:
     def __init__(self):
 
-        print(''.join(['=' for _ in range(50)])+'\n==- System message -====- thank that you chose us -==\n'+''.join(['=' for _ in range(50)]))
+        print(''.join(['=' for _ in range(50)])+'\n==- System message -====- thank that you chose us -==\n'+
+              ''.join(['=' for _ in range(50)]))
 
         self.mdp = 'best.pt'
 
         while 'y' in input('continue? [y/n] ').lower():
-            self.useModel(modelPath=self.mdp if 'y' in input(f'use {self.mdp} model? [y/n]' ).lower() else self.saveChose(),
+            self.useModel(modelPath=self.mdp if 'y' in input(f'use {self.mdp} model? [y/n]').lower() else self.saveChose(),
                           imgPath=input('please print path to the photo and the name of the photo:  ')
                           )
+
     def saveChose(self):
         self.mdp = input('please print path to the model: ')
         self.mdp
 
-    def useModel(self, modelPath:str, imgPath:str):
+    def useModel(self, modelPath: str, imgPath: str):
         """use the created model """
         model = YOLO(modelPath)
 
         result = model.predict(imgPath)[0]
         t1 = result.probs.top1
 
-
-
         print(''.join(['-' for _ in range(100)])+'\n')
-        print(result.probs.top5,'\n',f'1. {model.names[result.probs.top1]} : {result.probs.top1conf}\n')
+        print(result.probs.top5, '\n', f'1. {model.names[result.probs.top1]} : {result.probs.top1conf}\n')
         return model.names[result.probs.top1]
-if __name__ =='__main__':
+
+
+if __name__ == '__main__':
     if 'y' in input('work with train? [y/n]  ').lower():
         Train()
     elif 'y' in input('use model for classification? [y/n]  ').lower():

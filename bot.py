@@ -34,7 +34,6 @@ name = ""
 #     await bot.session.close()
 # asyncio.run(delete_webhook())
 
-# Инициализация базы данных
 def init_db():
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
@@ -96,6 +95,7 @@ async def cmd_start(message: types.Message):
         parse_mode="HTML"
     )
 
+
 def generate_url(filters, m:str):
     url = m
     # Кодируем параметры фильтров для URL
@@ -103,11 +103,13 @@ def generate_url(filters, m:str):
         url += "+" + i
     return url
 
+
 def change_dict_lang(dict):
     lan_dict = {}
     for key in dict:
         lan_dict[tr[key]["name"]] = tr[key][dict[key]]
     return lan_dict
+
 
 # вб озон ламода алик яндекс маркет
 # обработчик получения фотографии
@@ -144,7 +146,6 @@ async def handle_photo(message: types.Message):
         description += f'{i}: {desc_dict[i]}\n'
     description.strip()
 
-
     await proc.delete()
     if desc_dict['department'] != 'it not a dress':
         # Перевод описания
@@ -169,21 +170,25 @@ async def handle_photo(message: types.Message):
 
         buttons = [
             [
-            types.InlineKeyboardButton(text=tr['yes'], callback_data="ph_yes"),
-            types.InlineKeyboardButton(text=tr['no'], callback_data="ph_no")
+                types.InlineKeyboardButton(text=tr['yes'], callback_data="ph_yes"),
+                types.InlineKeyboardButton(text=tr['no'], callback_data="ph_no")
             ]
         ]
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
         # Ссылки на маркетплейсы
-        filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
+        filters = [tr["a dress with color"][desc_dict["a dress with color"]],
+                   tr["hemline"][desc_dict["hemline"]],
+                   tr["detail"][desc_dict["detail"]]
+                   ]
         global ans
-        ans = (f'{lan_description}\n'+
-            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'+
-            # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
-            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
+        ans = (f'{lan_description}\n' +
+               f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>' +
+               f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>' +
+               f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>' +
+               # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>' +
+               f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>'
+               )
         await message.answer(
             f"{tr['photo_received1']}\n"+
             ans+
@@ -206,6 +211,7 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
     elif action == "no":
         await callback.message.edit_text(tr['rename_cancel']+ans+tr['photo_received2']+name, reply_markup=None,parse_mode="HTML",disable_web_page_preview=True)
     await callback.answer()
+
 
 # изменение названия платья
 @dp.message(DressStates.waiting_for_name)
@@ -342,6 +348,7 @@ async def handle_language_callback(callback: types.CallbackQuery):
 async def cmd_help(message: types.Message):
     await message.answer(tr['help'])
 
+
 # обработчик команды /feedback
 @dp.message(Command("feedback"))
 async def cmd_feedback(message: types.Message):
@@ -354,7 +361,7 @@ async def cmd_feedback(message: types.Message):
     feedback = feedback[10:]
     connection = sqlite3.connect('data_base.db')
     cursor = connection.cursor()
-    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)',(user_id, feedback))
+    cursor.execute('INSERT INTO feedback (user_id, text) VALUES (?, ?)', (user_id, feedback))
     connection.commit()
     connection.close()
     await message.answer(tr["feedback_right"])

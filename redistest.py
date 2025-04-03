@@ -2,6 +2,7 @@ from redis import StrictRedis as Sredis
 from config_reader import config
 from detectClothing import Classification
 # Classification()
+
 class Redis():
     def __init__(self):
         self.r = Sredis(host=config.ai_host.get_secret_value(), port=6379, password=config.ai_passwd.get_secret_value())
