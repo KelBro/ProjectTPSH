@@ -1,12 +1,25 @@
 # Telegram bot for standardization of dresses
 
-This is a Telegram bot designed for the purpose of standardizing clothing (in this case, dresses) using the AI model YOLO.
-The bot has been developed using the aiogram library. Radishes have also been integrated into the system.
+This is a Telegram bot designed for the purpose of standardizing clothing (in this case, dresses) using the AI model YOLO.  
+The bot has been developed using the aiogram library. Radishes have also been integrated into the system.  
 
-### Python version 3.10.6.
+## How to start:
+First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases)  
+You'll have to setup [Redis 7](https://redis.io/downloads/), or if you'll run it on Windows, you can use [Memurai](https://www.memurai.com/get-memurai)  
 
-## To use the bot, please follow these instructions:
-- Download the `requirements.txt`
-- Install Redis 7.2
-- Run the `main.py` file
-- The Telegram ID for the bot is __`@AssistantShoppingBot`__.
+### For bot
+First, you'll have to edit .env file, assign your Telegram Bot token, Redis server ip and Redis password  
+Install requirement modules ``pip install -r  ./requirements.txt``  
+When you're ready, start the _main.py_ file ``python ./main.py``  
+
+___
+
+### For ai
+First, you'll have to edit .env file, assign your Redis server ip and Redis password  
+Install [Models](https://drive.google.com/file/d/1epwmXhikBdfNGuILd3Ps3i6cvhvxvXcc/view?usp=sharing) and extract both folders to shopping-assistant-ai  
+Install requirment modules ``pip install -r  ./requirements.txt``  
+When you're ready, run _connect.py_ file ``python ./main.py``  
+
+_Notes:_  
+_You should use python 3.10.6_  
+_The bot and ai are meant to run on different servers, but it's not necessary_  
