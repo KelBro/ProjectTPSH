@@ -34,7 +34,7 @@
     },
     "changed_ru": "Теперь язык русский \uD83C\uDDF7\uD83C\uDDFA",
     "changed_en" : "Теперь язык английский \uD83C\uDDEC\uD83C\uDDE7",
-    "help": "Это меню помощи! Тут будут инструкции",
+    "help": "Команды бота:\n/help - Выводит меню помощи\n/start - Выводит приветственное сообщение\n\n\nКнопки бота:\nИстория - Показывает историю отправленных платьев\nОтзыв - Отправить отзыв о нашем боте\nЯзык - Сменить язык(Рус или Англ)\n\nЧтобы начать пользоваться функционалом бота, достаточно отправить фотку платья.",
     "empty": "Пусто",
     "a dress with color": {
       "name": "Цвет",
@@ -327,7 +327,7 @@
     },
     "changed_ru": "Language switched to Russian",
     "changed_en" : "Language switched to English",
-    "help": "This is the help menu! Here will be instructions",
+    "help": "Bot commands:\n/help - Sends help menu\n/start - Sends welcome message\n\n\nBot buttons:\nHistory - Shows the history of sent dresses\nFeedback - To send a feedback about our bot\nLanguage - To change language(Rus or Eng)\n\nTo start using bot's functionality, send a photo of a dress.",
     "empty": "Empty",
     "a dress with color": {
         "name": "Color",
