@@ -1,7 +1,9 @@
 {
   "ru": {
+    "cannot_write": "Пожалуйста, отправьте фото платья 😊",
+    "feedback_promt": "Пожалуйста, напишите ваш отзыв! 🙌",
     "feedback_right": "Спасибо за ваш отзыв, мы ценим любой вклад в наш проект! 🤗",
-    "feedback_error": "Извините, в вашем отзыве отсутвуют символы 😦",
+    "feedback_error": "Извините, в вашем отзыве недостаточно символов 😦",
     "language_change_blocked": "Сейчас нельзя сменить язык, так как вы вводите название платья",
     "feedback": "Отзыв",
     "yes" : "Да",
@@ -34,7 +36,7 @@
     },
     "changed_ru": "Теперь язык русский \uD83C\uDDF7\uD83C\uDDFA",
     "changed_en" : "Теперь язык английский \uD83C\uDDEC\uD83C\uDDE7",
-    "help": "Команды бота:\n/help - Выводит меню помощи\n/start - Выводит приветственное сообщение\n\n\nКнопки бота:\nИстория - Показывает историю отправленных платьев\nОтзыв - Отправить отзыв о нашем боте\nЯзык - Сменить язык(Рус или Англ)\n\nЧтобы начать пользоваться функционалом бота, достаточно отправить фотку платья.",
+    "help": "<strong>Команды бота:</strong>\n/start - Выводит приветственное сообщение и перезапускает бота\n/help - Выводит меню помощи\n\n<strong>Кнопки бота:</strong>\n<i>История</i> - Показывает историю запросов\n<i>Отзыв</i> - Оставить отзыв о данном боте\n<i>Язык</i> - Сменить язык на русский/английский\n\nЧтобы начать пользоваться функционалом бота, достаточно отправить фотографию платья",
     "empty": "Пусто",
     "a dress with color": {
       "name": "Цвет",
@@ -293,8 +295,10 @@
   },
 
   "en": {
+    "cannot_write": "Please send a photo of the dress \uD83D\uDE0A♂️",
+    "feedback_promt": "Please write your review! 🙌",
     "feedback_right": "Thank you for your feedback, we appreciate any contribution to our project! \uD83E\uDD17",
-    "feedback_error": "Sorry, there are missing characters in your review \uD83D\uDE26",
+    "feedback_error": "Sorry, there aren't enough characters in your review \uD83D\uDE26",
     "language_change_blocked": "You can't change the language now because you're entering a dress name",
     "feedback": "Feedback",
     "yes" : "Yes",
@@ -327,7 +331,7 @@
     },
     "changed_ru": "Language switched to Russian",
     "changed_en" : "Language switched to English",
-    "help": "Bot commands:\n/help - Sends help menu\n/start - Sends welcome message\n\n\nBot buttons:\nHistory - Shows the history of sent dresses\nFeedback - To send a feedback about our bot\nLanguage - To change language(Rus or Eng)\n\nTo start using bot's functionality, send a photo of a dress.",
+    "help": "<strong>Bot commands:</strong>\n/start - Shows the welcome message and restarts the bot\n/help - Displays the help menu\n\n<strong>Bot buttons:</strong>\n<i>History</i> - Shows request history\n<i>Feedback</i> - Leave feedback about this bot\n<i>Language</i> - Switch to Russian/English\n\nTo start using the bot, just send a photo of a dress",
     "empty": "Empty",
     "a dress with color": {
         "name": "Color",

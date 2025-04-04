@@ -75,6 +75,7 @@ users_dict = defaultdict(User)
 
 class DressStates(StatesGroup):
     waiting_for_name = State()
+    waiting_for_feedback = State()
 
 
 # пересоздание клавиатуры
@@ -189,13 +190,13 @@ async def handle_photo(message: types.Message):
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
         # Ссылки на маркетплейсы
-        filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
+        filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]], tr["pattern"][desc_dict["pattern"]]]
         ans = (f'{lan_description}\n'+
-            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr)}">{tr["link_vb"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr)}">{tr["link_ozon"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr)}">{tr["link_lamoda"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr).replace("%20","+")}">{tr["link_vb"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr).replace("%20","+")}">{tr["link_ozon"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr).replace("%20","+")}">{tr["link_lamoda"]}</a>'+
             # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
-            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr)}">{tr["link_yandex"]}</a>')
+            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr).replace("%20","+")}">{tr["link_yandex"]}</a>')
         users_dict[user_id].ans = ans
         await bot.send_message(text=
             f"{tr['photo_received1']}\n"+
@@ -221,6 +222,9 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
     ans = users_dict[user_id].ans
     name = users_dict[user_id].name
     action = callback.data.split("_")[1]
+
+    await callback.message.edit_reply_markup(reply_markup=None)
+
     if action == "yes":
         await callback.message.answer(tr['rename_prompt'])
         await state.set_state(DressStates.waiting_for_name)
@@ -250,6 +254,43 @@ async def process_dress_name(message: types.Message, state: FSMContext):
         cursor.execute('UPDATE uploads SET name = ? WHERE upload_id = ?', (new_name, last_upload_id))
         connection.commit()
         connection.close()
+
+
+# Обработчик любого текстового сообщения (кроме команд и состояний)
+@dp.message(F.text)
+async def handle_any_text(message: types.Message, state: FSMContext):
+    if message.chat.id < 0:
+        return
+
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
+
+    # Проверяем текущее состояние
+    current_state = await state.get_state()
+
+    # Пропускаем ненужные состояния
+    if current_state == DressStates.waiting_for_name.state or current_state == DressStates.waiting_for_feedback.state:
+        return
+
+    # Проверяем команды/кнопки
+    if message.text == tr['history']:
+        await handle_history(message)
+        return
+    elif message.text == tr['feedback']:
+        await handle_feedback(message, state)
+        return
+    elif message.text == tr['language']:
+        await handle_language(message)
+        return
+    elif message.text == '/start':
+        await cmd_start(message)
+        return
+    elif message.text == '/help':
+        await cmd_help(message)
+        return
+
+    # Если сообщение не является командой и не в состоянии - выводим сообщение
+    await message.answer(tr["cannot_write"])
 
 
 def get_history_keyboard(user_id, tr):
@@ -340,13 +381,12 @@ async def history_menu(callback: types.CallbackQuery):
                 if i != "":
                     lan_description += f"{i}: {d[i]}\n"
             lan_description = lan_description.strip()
-            filters = [tr["a dress with color"][dict["a dress with color"]], tr["hemline"][dict["hemline"]],
-                       tr["detail"][dict["detail"]]]
-            links = (f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr)}">{tr["link_vb"]}</a>' +
-                   f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr)}">{tr["link_ozon"]}</a>' +
-                   f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr)}">{tr["link_lamoda"]}</a>' +
+            filters = [tr["a dress with color"][dict["a dress with color"]], tr["hemline"][dict["hemline"]],tr["detail"][dict["detail"]], tr["pattern"][dict["pattern"]]]
+            links = (f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr).replace("%20","+")}">{tr["link_vb"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr).replace("%20","+")}">{tr["link_ozon"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr).replace("%20","+")}">{tr["link_lamoda"]}</a>' +
                    # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
-                   f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr)}">{tr["link_yandex"]}</a>')
+                   f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr).replace("%20","+")}">{tr["link_yandex"]}</a>')
             await callback.message.answer(
                 f"{hbold(item[2])}\n\n{lan_description}\n{links}\n{item[4]}",
                 parse_mode="HTML",
@@ -373,9 +413,9 @@ async def handle_language(message: types.Message):
 @dp.callback_query(F.data.startswith("lan_"))
 async def handle_language_callback(callback: types.CallbackQuery):
     user_id = callback.from_user.id
-    tr = get_translations(users_dict[user_id].lang)
     action = callback.data.split("_")[1]
     users_dict[user_id].lang = action
+    tr = get_translations(action)
     await callback.message.delete()
     await callback.message.answer(
         tr[f'changed_{action}'],
@@ -390,17 +430,24 @@ async def cmd_help(message: types.Message):
     if message.chat.id < 0: return
     user_id = message.from_user.id
     tr = get_translations(users_dict[user_id].lang)
-    await message.answer(tr['help'])
+    await message.answer(tr['help'], parse_mode="HTML")
 
 @dp.message(lambda message: message.text in [lang['feedback'] for lang in TRANSLATIONS.values()])
-async def handle_feedback(message: types.Message):
+async def handle_feedback(message: types.Message, state: FSMContext):
+    user_id = message.from_user.id
+    tr = get_translations(users_dict[user_id].lang)
+    await message.answer(tr['feedback_promt'])
+    await state.set_state(DressStates.waiting_for_feedback)
+
+
+@dp.message(DressStates.waiting_for_feedback)
+async def process_dress_name(message: types.Message, state: FSMContext):
     if message.chat.id < 0: return
     user_id = message.from_user.id
     tr = get_translations(users_dict[user_id].lang)
     feedback = message.text
-    if len(feedback)<10:
+    if len(feedback)<3:
         await message.answer(tr["feedback_error"])
         return
-    feedback = feedback[10:]
     await bot.send_message(chat_id=feedback_chat_id, text=f'({user_id}){message.from_user.username}: {feedback}')
     await message.answer(tr["feedback_right"])
