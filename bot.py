@@ -64,6 +64,7 @@ def get_translations(lang):
 
 class User:
     def __init__(self):
+        self.last_upload_id = -1
         self.st_num = 1
         self.ans = ""
         self.name = ""
@@ -103,7 +104,7 @@ async def cmd_start(message: types.Message):
         parse_mode="HTML"
     )
 
-def generate_url(filters, m:str):
+def generate_url(filters, m:str, tr):
     url = m
     # Кодируем параметры фильтров для URL
     for i in filters:
@@ -135,7 +136,6 @@ async def handle_photo(message: types.Message):
     photo_bytes = photo_buff.getvalue()
     photo_id = f'{user_id}{date.hour}{date.minute}{date.second}{date.microsecond}'
     len_id = len(photo_id)
-    print(photo_id)
 
     photo_request = len_id.to_bytes(1,'big') + photo_id.encode(encoding='utf-8') + photo_bytes
 
@@ -143,7 +143,7 @@ async def handle_photo(message: types.Message):
     while True:
         if r.exists(photo_id):
             desc_dict = eval(r.get(photo_id).decode(encoding='utf-8'))
-            print("lool",desc_dict)
+            # print("lool",desc_dict)
             r.delete(photo_id)
             break
 
@@ -176,6 +176,7 @@ async def handle_photo(message: types.Message):
                        (user_id, name, str(desc_dict), date))
         global upload_id
         upload_id = cursor.lastrowid
+        users_dict[user_id].last_upload_id = upload_id
         connection.commit()
         connection.close()
 
@@ -190,11 +191,11 @@ async def handle_photo(message: types.Message):
         # Ссылки на маркетплейсы
         filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]]]
         ans = (f'{lan_description}\n'+
-            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>'+
-            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr)}">{tr["link_vb"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr)}">{tr["link_ozon"]}</a>'+
+            f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr)}">{tr["link_lamoda"]}</a>'+
             # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
-            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
+            f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr)}">{tr["link_yandex"]}</a>')
         users_dict[user_id].ans = ans
         await bot.send_message(text=
             f"{tr['photo_received1']}\n"+
@@ -231,6 +232,7 @@ async def handle_photo_callback(callback: types.CallbackQuery, state: FSMContext
 @dp.message(DressStates.waiting_for_name)
 async def process_dress_name(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
+    last_upload_id = users_dict[user_id].last_upload_id
     tr = get_translations(users_dict[user_id].lang)
     ans = users_dict[user_id].ans
     new_name = message.text
@@ -245,7 +247,7 @@ async def process_dress_name(message: types.Message, state: FSMContext):
 
         connection = sqlite3.connect('data_base.db')
         cursor = connection.cursor()
-        cursor.execute('UPDATE uploads SET name = ? WHERE upload_id = ?', (new_name, upload_id))
+        cursor.execute('UPDATE uploads SET name = ? WHERE upload_id = ?', (new_name, last_upload_id))
         connection.commit()
         connection.close()
 
@@ -296,7 +298,6 @@ async def handle_history(message: types.Message):
     user_id = message.from_user.id
     tr = get_translations(users_dict[user_id].lang)
     if message.chat.id < 0: return
-    global user_id
     user_id = message.from_user.id
     users_dict[user_id].st_num = 1
     keyboard = get_history_keyboard(user_id, tr)
@@ -341,11 +342,11 @@ async def history_menu(callback: types.CallbackQuery):
             lan_description = lan_description.strip()
             filters = [tr["a dress with color"][dict["a dress with color"]], tr["hemline"][dict["hemline"]],
                        tr["detail"][dict["detail"]]]
-            links = (f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье")}">{tr["link_vb"]}</a>' +
-                   f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье")}">{tr["link_ozon"]}</a>' +
-                   f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье")}">{tr["link_lamoda"]}</a>' +
+            links = (f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr)}">{tr["link_vb"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr)}">{tr["link_ozon"]}</a>' +
+                   f'<a href="{generate_url(filters, "https://www.lamoda.ru/catalogsearch/result/?q=платье", tr)}">{tr["link_lamoda"]}</a>' +
                    # f'<a href="{generate_url(filters, "https://m.aliexpress.com/wholesale?SearchText=платье")}">{tr["link_alik"]}</a>'+
-                   f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье")}">{tr["link_yandex"]}</a>')
+                   f'<a href="{generate_url(filters, "https://market.yandex.ru/search?text=платье", tr)}">{tr["link_yandex"]}</a>')
             await callback.message.answer(
                 f"{hbold(item[2])}\n\n{lan_description}\n{links}\n{item[4]}",
                 parse_mode="HTML",
