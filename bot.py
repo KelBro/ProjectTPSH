@@ -36,6 +36,7 @@ upload_id = -1
 # asyncio.run(delete_webhook())
 
 
+
 # Инициализация базы данных
 def init_db():
     connection = sqlite3.connect('data_base.db')
@@ -110,7 +111,7 @@ def generate_url(filters, m:str, tr):
     # Кодируем параметры фильтров для URL
     for i in filters:
         if i != tr["detail"]["nodetail"]:
-            url += "+" + i
+            url += "+" + i.replace(" ","+")
     return url
 
 def change_dict_lang(dict, tr):
@@ -162,7 +163,7 @@ async def handle_photo(message: types.Message):
         lan_description = ''
         d = change_dict_lang(desc_dict, tr)
         for i in d:
-            print(i)
+            # print(i)
             if i != "":
                 lan_description += f"{i}: {d[i]}\n"
         lan_description = lan_description.strip()
@@ -276,10 +277,10 @@ async def handle_any_text(message: types.Message, state: FSMContext):
     if message.text == get_translations('ru')['history'] or message.text == get_translations('en')['history']:
         await handle_history(message)
         return
-    elif message.text == tr['feedback']:
+    elif message.text == get_translations('ru')['feedback'] or message.text == get_translations('en')['feedback']:
         await handle_feedback(message, state)
         return
-    elif message.text == tr['language']:
+    elif message.text == get_translations('ru')['language'] or message.text == get_translations('en')['language']:
         await handle_language(message)
         return
     elif message.text == '/start':
