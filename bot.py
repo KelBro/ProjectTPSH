@@ -452,3 +452,4 @@ async def process_dress_name(message: types.Message, state: FSMContext):
         return
     await bot.send_message(chat_id=feedback_chat_id, text=f'({user_id}){message.from_user.username}: {feedback}')
     await message.answer(tr["feedback_right"])
+    await state.clear()
