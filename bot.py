@@ -273,7 +273,7 @@ async def handle_any_text(message: types.Message, state: FSMContext):
         return
 
     # Проверяем команды/кнопки
-    if message.text == tr['history']:
+    if message.text == get_translations('ru')['history'] or message.text == get_translations('en')['history']:
         await handle_history(message)
         return
     elif message.text == tr['feedback']:
