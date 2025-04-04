@@ -258,6 +258,7 @@ async def process_dress_name(message: types.Message, state: FSMContext):
 
 
 # Обработчик любого текстового сообщения (кроме команд и состояний)
+# Обработчик любого текстового сообщения (кроме команд и состояний)
 @dp.message(F.text)
 async def handle_any_text(message: types.Message, state: FSMContext):
     if message.chat.id < 0:
@@ -269,11 +270,7 @@ async def handle_any_text(message: types.Message, state: FSMContext):
     # Проверяем текущее состояние
     current_state = await state.get_state()
 
-    # Пропускаем ненужные состояния
-    if current_state == DressStates.waiting_for_name.state or current_state == DressStates.waiting_for_feedback.state:
-        return
-
-    # Проверяем команды/кнопки
+    # Обрабатываем команды/кнопки независимо от состояния
     if message.text == get_translations('ru')['history'] or message.text == get_translations('en')['history']:
         await handle_history(message)
         return
@@ -288,6 +285,14 @@ async def handle_any_text(message: types.Message, state: FSMContext):
         return
     elif message.text == '/help':
         await cmd_help(message)
+        return
+
+    # Если есть активное состояние, пропускаем остальную обработку
+    if current_state == DressStates.waiting_for_name.state:
+        await process_dress_name(message, state)
+        return
+    elif current_state == DressStates.waiting_for_feedback.state:
+        await process_feedback(message, state)
         return
 
     # Если сообщение не является командой и не в состоянии - выводим сообщение
