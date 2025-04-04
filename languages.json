@@ -295,7 +295,7 @@
   },
 
   "en": {
-    "cannot_write": "Please send a photo of the dress \uD83D\uDE0A♂️",
+    "cannot_write": "Please send a photo of the dress 😊",
     "feedback_promt": "Please write your review! 🙌",
     "feedback_right": "Thank you for your feedback, we appreciate any contribution to our project! \uD83E\uDD17",
     "feedback_error": "Sorry, there aren't enough characters in your review \uD83D\uDE26",
@@ -318,7 +318,7 @@
     "link_yandex": "Link to Yandex Market\n",
     "photo_received2": "\nName:\n",
     "photo_received22":  "\nDo you want to change it?",
-    "not_a_dress": "It not a dress ☹\nPlease send the photo with dress",
+    "not_a_dress": "It's not a dress ☹\nPlease send the photo with dress",
     "rename_prompt": "Enter a new name for the dress:",
     "rename_success": "Dress name successfully changed to: ",
     "rename_cancel": "The changes have been canceled.\n\n",
