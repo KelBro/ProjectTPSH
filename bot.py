@@ -110,7 +110,7 @@ def generate_url(filters, m:str, tr):
     url = m
     # Кодируем параметры фильтров для URL
     for i in filters:
-        if i != tr["detail"]["nodetail"]:
+        if i != TRANSLATIONS['ru']["detail"]["nodetail"]:
             url += "+" + i.replace(" ","+")
     return url
 
@@ -191,7 +191,7 @@ async def handle_photo(message: types.Message):
         keyboard = types.InlineKeyboardMarkup(inline_keyboard=buttons)
 
         # Ссылки на маркетплейсы
-        filters = [tr["a dress with color"][desc_dict["a dress with color"]], tr["hemline"][desc_dict["hemline"]], tr["detail"][desc_dict["detail"]], tr["pattern"][desc_dict["pattern"]]]
+        filters = [TRANSLATIONS['ru']["a dress with color"][desc_dict["a dress with color"]], TRANSLATIONS['ru']["hemline"][desc_dict["hemline"]], TRANSLATIONS['ru']["detail"][desc_dict["detail"]], TRANSLATIONS['ru']["pattern"][desc_dict["pattern"]]]
         ans = (f'{lan_description}\n'+
             f'<a href="{generate_url(filters, "https://www.wildberries.ru/catalog/0/search.aspx?search=платье", tr).replace("%20","+")}">{tr["link_vb"]}</a>'+
             f'<a href="{generate_url(filters, "https://www.ozon.ru/search/?text=платье", tr).replace("%20","+")}">{tr["link_ozon"]}</a>'+
