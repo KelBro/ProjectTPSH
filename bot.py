@@ -447,7 +447,7 @@ async def handle_feedback(message: types.Message, state: FSMContext):
 
 
 @dp.message(DressStates.waiting_for_feedback)
-async def process_dress_name(message: types.Message, state: FSMContext):
+async def process_feedback(message: types.Message, state: FSMContext):
     if message.chat.id < 0: return
     user_id = message.from_user.id
     tr = get_translations(users_dict[user_id].lang)
