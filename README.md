@@ -7,17 +7,17 @@ The bot has been developed using the aiogram library. Radishes have also been in
 <img alt="example" src="https://github.com/user-attachments/assets/e554da34-65e9-47c6-aceb-a469ace458ff" width=200>
 
 ## How to start:
-First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases)  
+First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases), there will be 2 folders, Ai and Bot.
 You'll have to setup [Redis 7](https://redis.io/downloads/), or if you'll run it on Windows, you can use [Memurai](https://www.memurai.com/get-memurai)  
 
-### For bot
+### For Bot
 First, you'll have to edit .env file, assign your Telegram Bot token, Redis server ip and Redis password  
 Install requirement modules ``pip install -r  ./requirements.txt``  
 When you're ready, start the _main.py_ file ``python ./main.py``  
 
 ___
 
-### For ai
+### For Ai
 First, you'll have to edit .env file, assign your Redis server ip and Redis password  
 Install [Models](https://drive.google.com/file/d/1epwmXhikBdfNGuILd3Ps3i6cvhvxvXcc/view?usp=sharing) and extract both folders to shopping-assistant-ai  
 Install requirment modules ``pip install -r  ./requirements.txt``  
