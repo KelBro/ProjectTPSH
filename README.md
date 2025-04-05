@@ -3,6 +3,9 @@
 This is a Telegram bot designed for the purpose of standardizing clothing (in this case, dresses) using the AI model YOLO.  
 The bot has been developed using the aiogram library. Radishes have also been integrated into the system.  
 
+<img alt="example" src="https://github.com/user-attachments/assets/441974b3-b675-47b3-b876-d918922938aa" width=200>
+<img alt="example" src="https://github.com/user-attachments/assets/e554da34-65e9-47c6-aceb-a469ace458ff" width=200>
+
 ## How to start:
 First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases)  
 You'll have to setup [Redis 7](https://redis.io/downloads/), or if you'll run it on Windows, you can use [Memurai](https://www.memurai.com/get-memurai)  
