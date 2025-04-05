@@ -7,7 +7,7 @@ The bot has been developed using the aiogram library. Radishes have also been in
 <img alt="example" src="https://github.com/user-attachments/assets/e554da34-65e9-47c6-aceb-a469ace458ff" width=200>
 
 ## How to start:
-First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases), there will be 2 folders, Ai and Bot.
+First, install the latest [release](https://github.com/KelBro/ProjectTPSH/releases), there will be 2 folders, Ai and Bot.  
 You'll have to setup [Redis 7](https://redis.io/downloads/), or if you'll run it on Windows, you can use [Memurai](https://www.memurai.com/get-memurai)  
 
 ### For Bot
