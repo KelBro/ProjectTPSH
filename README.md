@@ -26,4 +26,4 @@ When you're ready, run _connect.py_ file ``python ./main.py``
 _Notes:_  
 _You should use python 3.10.6_  
 _The bot and ai are meant to run on different servers, but it's not necessary_  
-_You're GPU must support cudo_
+_Your GPU must support cudo_
